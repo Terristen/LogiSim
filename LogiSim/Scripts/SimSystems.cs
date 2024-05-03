@@ -191,7 +191,7 @@ namespace LogiSim
                     }
 
                     // Create a NativeHashMap to hold the total quantity of each item type
-                    NativeHashMap<PacketKey, int> itemTotals = new NativeHashMap<PacketKey, int>(storageBuffer.Length, Allocator.Temp);
+                    NativeHashMap<PacketKey, float> itemTotals = new NativeHashMap<PacketKey, float>(storageBuffer.Length, Allocator.Temp);
 
                     // Iterate over all packets in the machine's storage
                     for (int j = 0; j < storageBuffer.Length; j++)
@@ -221,7 +221,7 @@ namespace LogiSim
                         PacketKey key = new PacketKey(packet.Type, packet.ItemProperties);
 
                         // If the item type is already in the NativeHashMap, increase the quantity
-                        if (itemTotals.TryGetValue(key, out int quantity))
+                        if (itemTotals.TryGetValue(key, out float quantity))
                         {
                             itemTotals[key] = quantity + packet.Quantity;
                         }
@@ -241,7 +241,7 @@ namespace LogiSim
                     {
                         // Get the key and value from the iterator
                         PacketKey key = itemTotalsIterator.Keys[i];
-                        int quantity = itemTotalsIterator.Values[i];
+                        float quantity = itemTotalsIterator.Values[i];
 
                         // Create a new packet with the calculated total
                         Packet totalspacket = new Packet
@@ -513,7 +513,7 @@ namespace LogiSim
 
                     if (!machine.Processing && !machine.Disabled)
                     {
-                        NativeHashMap<int, int> foundPackets = new NativeHashMap<int, int>(inputs.Length, Allocator.Temp);
+                        NativeHashMap<int, float> foundPackets = new NativeHashMap<int, float>(inputs.Length, Allocator.Temp);
                         var helperFunctions = new HelperFunctions();
 
                         // Check if the machine has the required input items
@@ -543,13 +543,13 @@ namespace LogiSim
                         // If the machine has the required input items, subtract the required quantities and set Processing to true
                         if (hasRequiredItems)
                         {
-                            NativeHashMap<int, int>.Enumerator foundPacketsEnumerator = foundPackets.GetEnumerator();
+                            NativeHashMap<int, float>.Enumerator foundPacketsEnumerator = foundPackets.GetEnumerator();
 
                             while (foundPacketsEnumerator.MoveNext())
                             {
                                 var pair = foundPacketsEnumerator.Current;
                                 int index = pair.Key;
-                                int quantityToSubtract = pair.Value;
+                                float quantityToSubtract = pair.Value;
 
                                 Packet packetInStorage = storageBuffer[index].Packet;
                                 packetInStorage.Quantity -= quantityToSubtract;
@@ -830,7 +830,7 @@ namespace LogiSim
                     RecipeInputElement recipeInput = recipeInputs[i];
 
                     // Count the number of items in storageBuffer that match the current recipe input
-                    int storageCount = 0;
+                    float storageCount = 0;
                     for (int j = 0; j < storageBuffer.Length; j++)
                     {
                         Packet packet = storageBuffer[j].Packet;
@@ -903,7 +903,7 @@ namespace LogiSim
                     // Get the current recipe output
                     RecipeOutputElement recipeOutput = recipeOutputs[i];
 
-                    int capacity = helperFunctions.GetCapacityAvailable(recipeOutput.Packet, storageCapacityBuffer);
+                    float capacity = helperFunctions.GetCapacityAvailable(recipeOutput.Packet, storageCapacityBuffer);
 
                     // Check if the total output quantity is greater than or equal to the capacity
                     if (capacity <= 0)
@@ -933,7 +933,7 @@ namespace LogiSim
                     // Get the current recipe output
                     RecipeInputElement recipeInput = recipeInputs[i];
 
-                    int capacity = helperFunctions.GetCapacityAvailable(recipeInput.Packet, storageCapacityBuffer);
+                    float capacity = helperFunctions.GetCapacityAvailable(recipeInput.Packet, storageCapacityBuffer);
 
                     // Check if the total output quantity is greater than or equal to the capacity
                     if (capacity <= 0)
@@ -1045,7 +1045,7 @@ namespace LogiSim
             return default; 
         }
 
-        public int GetCapacityAvailable(Packet packet, DynamicBuffer<StorageCapacity> storageCapacityBuffer)
+        public float GetCapacityAvailable(Packet packet, DynamicBuffer<StorageCapacity> storageCapacityBuffer)
         {
             for (int i = 0; i < storageCapacityBuffer.Length; i++)
             {

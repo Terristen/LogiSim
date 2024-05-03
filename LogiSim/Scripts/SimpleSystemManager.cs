@@ -66,6 +66,8 @@ namespace LogiSim
             LogiSim.Instance.ConnectMachines(machine1, machine2, outputname);
         }
 
+
+        //TODO: MODIFY THIS TO USE THE NEW CREATEMACHINE FUNCTION
         public void CreateSystem()
         {
             // Load the recipes

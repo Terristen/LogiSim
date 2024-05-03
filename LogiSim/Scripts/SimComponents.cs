@@ -17,7 +17,7 @@ namespace LogiSim
     {
         public ItemProperty ItemProperties;
         public int Type;
-        public int Quantity;
+        public float Quantity;
         public float ElapsedTime;
     }
 
@@ -27,8 +27,8 @@ namespace LogiSim
     public struct StorageCapacity : IBufferElementData
     {
         public ItemProperty BinType;
-        public int Capacity;
-        public int CurrentQuantity;
+        public float Capacity;
+        public float CurrentQuantity;
     }
 
 
@@ -79,6 +79,7 @@ namespace LogiSim
         public float OutputRefractory; //time in seconds before the machine can output again
         public ItemProperty PowerType;
         public float PowerConsumption;
+        public float PowerStorage;
     }
 
     /// <summary>
@@ -95,6 +96,14 @@ namespace LogiSim
     public struct TransferBufferElement : IBufferElementData
     {
         public Packet Packet;
+    }
+
+    public struct MachinePort : IBufferElementData
+    {
+        public ItemProperty PortProperty;
+        public float StorageCapacity;
+        public SimpleGuid PortID;
+        public Direction PortDirection;
     }
 
     /// <summary>
@@ -116,6 +125,7 @@ namespace LogiSim
     /// <summary>
     /// Defines the possible directions of a connection in relation to a machine.
     /// </summary>
+    [Serializable]
     public enum Direction { In, Out }
 
     /// <summary>
@@ -128,6 +138,8 @@ namespace LogiSim
         public int Type;
         public Entity ConnectedEntity;
         public Direction ConnectionDirection;
+        public SimpleGuid FromPortID;
+        public SimpleGuid ToPortID;
     }
 
     public struct Working : IComponentData
