@@ -1,0 +1,112 @@
+[
+  {
+      "Key": "any",
+      "Value": {
+          "name": "Any",
+          "code": 0,
+          "properties": "None",
+          "icon": "asterisk",
+          "prefab": "",
+          "description": "Denotes a recipe requirement that can be satisfied by any material type that matches the other requirements of the recipe."
+      }
+  },
+  {
+      "Key": "electricity",
+      "Value": {
+          "name": "Electricity",
+          "code": 1,
+          "properties": "Energy",
+          "icon": "zap",
+          "prefab": "",
+          "description": "A single unit of electricity. (Watt)"
+      }
+  },
+  {
+      "Key": "ore",
+      "Value": {
+          "name": "Ore",
+          "code": 2,
+          "properties": "RawMaterial, Solid",
+          "icon": "",
+          "prefab": "",
+          "description": ""
+      }
+  },
+  {
+      "Key": "gravel",
+      "Value": {
+          "name": "Gravel",
+          "code": 3,
+          "properties": "RawMaterial, Solid",
+          "icon": "",
+          "prefab": "",
+          "description": ""
+      }
+  },
+  {
+      "Key": "widget",
+      "Value": {
+          "name": "Widget",
+          "code": 4,
+          "properties": "Product",
+          "icon": "",
+          "prefab": "",
+          "description": ""
+      }
+  },
+  {
+      "Key": "water",
+      "Value": {
+          "name": "Water",
+          "code": 5,
+          "properties": "RawMaterial, Liquid, Coolant",
+          "icon": "",
+          "prefab": "",
+          "description": ""
+      }
+  },
+  {
+      "Key": "diesel",
+      "Value": {
+          "name": "Diesel",
+          "code": 6,
+          "properties": "Liquid, Fuel",
+          "icon": "",
+          "prefab": "",
+          "description": ""
+      }
+  },
+  {
+      "Key": "gasoline",
+      "Value": {
+          "name": "Gasoline",
+          "code": 7,
+          "properties": "Liquid, Fuel",
+          "icon": "",
+          "prefab": "",
+          "description": ""
+      }
+  },
+  {
+      "Key": "methane",
+      "Value": {
+          "name": "Methane",
+          "code": 8,
+          "properties": "Fuel, Gas",
+          "icon": "",
+          "prefab": "",
+          "description": ""
+      }
+  },
+  {
+      "Key": "alcohol",
+      "Value": {
+          "name": "Alcohol",
+          "code": 9,
+          "properties": "Liquid, Fuel",
+          "icon": "",
+          "prefab": "",
+          "description": ""
+      }
+  }
+]

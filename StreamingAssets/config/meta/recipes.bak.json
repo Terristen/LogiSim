@@ -1,0 +1,84 @@
+[
+  {
+    "Key": "Conveyor",
+    "Value": {
+      "inputs": [
+        {
+          "ItemProperties": "Solid",
+          "type": "any",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "ItemProperties": "Solid",
+          "type": "any",
+          "quantity": 1
+        }
+      ],
+      "processingTime": 2.0,
+      "name": "Conveyor",
+      "hideFlags": "None"
+    }
+  },
+  {
+    "Key": "Generator",
+    "Value": {
+      "inputs": [],
+      "outputs": [
+        {
+          "ItemProperties": "Energy",
+          "type": "electricity",
+          "quantity": 1
+        }
+      ],
+      "processingTime": 1.0,
+      "name": "Generator",
+      "hideFlags": "None"
+    }
+  },
+  {
+    "Key": "Miner",
+    "Value": {
+      "inputs": [
+        {
+          "ItemProperties": "Energy",
+          "type": "electricity",
+          "quantity": 5
+        }
+      ],
+      "outputs": [
+        {
+          "ItemProperties": "None",
+          "type": "ore",
+          "quantity": 1
+        }
+      ],
+      "processingTime": 5.0,
+      "name": "Miner",
+      "hideFlags": "None"
+    }
+  },
+  {
+    "Key": "Conduit",
+    "Value": {
+      "inputs": [
+        {
+          "ItemProperties": "Energy",
+          "type": "electricity",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "ItemProperties": "Energy",
+          "type": "electricity",
+          "quantity": 1
+        }
+      ],
+      "processingTime": 1.0,
+      "name": "Conduit",
+      "hideFlags": "None"
+    }
+  }
+]

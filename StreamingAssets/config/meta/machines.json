@@ -1,0 +1,110 @@
+[
+  {
+      "Key": "conduit_1",
+      "Value": {
+          "name": "Conduit_1",
+          "prefabRef": "prefab_ConduitBasic",
+          "MachineClass": "Logistics",
+          "Efficiency": 0.5,
+          "Level": 1,
+          "Quality": 1,
+          "ValidInputs": [
+              {
+                  "PortProperty": "Energy",
+                  "StorageCapacity": 1
+              }
+          ],
+          "ValidOutputs": [
+              {
+                  "PortProperty": "Energy",
+                  "StorageCapacity": 1
+              }
+          ],
+          "IsTransporter": true,
+          "OutputRefractoryTime": 0,
+          "PowerType": "None",
+          "PowerConsumption": 0
+      }
+  },
+  {
+      "Key": "conveyor_1",
+      "Value": {
+          "name": "Conveyor_1",
+          "prefabRef": "prefab_ConveyorBasic",
+          "MachineClass": "Logistics",
+          "Efficiency": 0.5,
+          "Level": 1,
+          "Quality": 1,
+          "ValidInputs": [
+              {
+                  "PortProperty": "Solid",
+                  "StorageCapacity": 1
+              }
+          ],
+          "ValidOutputs": [
+              {
+                  "PortProperty": "Solid",
+                  "StorageCapacity": 1
+              }
+          ],
+          "IsTransporter": true,
+          "OutputRefractoryTime": 1,
+          "PowerType": "None",
+          "PowerConsumption": 0
+      }
+  },
+  {
+      "Key": "generator_1",
+      "Value": {
+          "name": "Generator_1",
+          "prefabRef": "prefab_Generator",
+          "MachineClass": "PowerGeneration",
+          "Efficiency": 0.5,
+          "Level": 1,
+          "Quality": 1,
+          "ValidInputs": [
+              {
+                  "PortProperty": "Liquid, Fuel",
+                  "StorageCapacity": 20
+              }
+          ],
+          "ValidOutputs": [
+              {
+                  "PortProperty": "Energy",
+                  "StorageCapacity": 200
+              }
+          ],
+          "IsTransporter": false,
+          "OutputRefractoryTime": 0,
+          "PowerType": "None",
+          "PowerConsumption": 0
+      }
+  },
+  {
+      "Key": "miner_1",
+      "Value": {
+          "name": "Miner_1",
+          "prefabRef": "prefab_default",
+          "MachineClass": "ResourceExtractor",
+          "Efficiency": 0.5,
+          "Level": 1,
+          "Quality": 1,
+          "ValidInputs": [
+              {
+                  "PortProperty": "Energy",
+                  "StorageCapacity": 300
+              }
+          ],
+          "ValidOutputs": [
+              {
+                  "PortProperty": "Solid",
+                  "StorageCapacity": 100
+              }
+          ],
+          "IsTransporter": false,
+          "OutputRefractoryTime": 2,
+          "PowerType": "Energy",
+          "PowerConsumption": 2
+      }
+  }
+]

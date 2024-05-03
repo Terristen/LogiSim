@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: MachinePrefabs
+  m_EditorClassIdentifier: 
+  m_GroupName: MachinePrefabs
+  m_Data:
+    m_SerializedData: []
+  m_GUID: f59daf2fbb72c37469dac0243514c167
+  m_SerializeEntries:
+  - m_GUID: 8a16320178a046746a087f99f22e77d7
+    m_Address: prefab_Generator
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - MachinePrefabs
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 34453241c62aca54a8cd8ceaf4857455
+    m_Address: prefab_ConduitBasic
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - MachinePrefabs
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c18ef6fc812ecb048a31b7650153292a
+    m_Address: prefab_LiquidStorageTank
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - MachinePrefabs
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8e7d1d74c207b60438684e5a59f9e046
+    m_Address: prefab_default
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - MachinePrefabs
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 501c4fcf548321048a45885f74e26543
+    m_Address: prefab_ConveyorBasic
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - MachinePrefabs
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 62f906bedfb5b08438ef18e096b2fe02, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: f2c4bc3a8e5e3a743ba76bc5687776a0, type: 2}
+    - {fileID: 11400000, guid: 8978fc5f4c95ef346b64a680fcf65ad9, type: 2}

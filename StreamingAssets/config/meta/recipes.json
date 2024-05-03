@@ -1,0 +1,74 @@
+[
+  {
+      "Key": "conveyor",
+      "Value": {
+          "name": "Conveyor",
+          "processingTime": 2,
+          "inputs": [
+              {
+                  "ItemProperties": "Solid",
+                  "type": "any",
+                  "quantity": 1
+              }
+          ],
+          "outputs": [
+              {
+                  "ItemProperties": "Solid",
+                  "type": "any",
+                  "quantity": 1
+              }
+          ]
+      }
+  },
+  {
+      "Key": "generator",
+      "Value": {
+          "name": "Generator",
+          "processingTime": 1,
+          "inputs": [],
+          "outputs": [
+              {
+                  "ItemProperties": "Energy",
+                  "type": "electricity",
+                  "quantity": 5
+              }
+          ]
+      }
+  },
+  {
+      "Key": "miner",
+      "Value": {
+          "name": "Miner",
+          "processingTime": 5,
+          "inputs": [],
+          "outputs": [
+              {
+                  "ItemProperties": "RawMaterial, Solid, Ore",
+                  "type": "ore",
+                  "quantity": 1
+              }
+          ]
+      }
+  },
+  {
+      "Key": "conduit",
+      "Value": {
+          "name": "Conduit",
+          "processingTime": 0.1,
+          "inputs": [
+              {
+                  "ItemProperties": "Energy",
+                  "type": "electricity",
+                  "quantity": 1
+              }
+          ],
+          "outputs": [
+              {
+                  "ItemProperties": "Energy",
+                  "type": "electricity",
+                  "quantity": 1
+              }
+          ]
+      }
+  }
+]
