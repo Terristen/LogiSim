@@ -1,74 +1,80 @@
 [
   {
-      "Key": "conveyor",
-      "Value": {
-          "name": "Conveyor",
-          "processingTime": 2,
-          "inputs": [
-              {
-                  "ItemProperties": "Solid",
-                  "type": "any",
-                  "quantity": 1
-              }
-          ],
-          "outputs": [
-              {
-                  "ItemProperties": "Solid",
-                  "type": "any",
-                  "quantity": 1
-              }
-          ]
-      }
+    "Key": "conveyor",
+    "Value": {
+      "name": "Conveyor",
+      "inputs": [
+        {
+          "ItemProperties": "Solid",
+          "type": "any",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "ItemProperties": "Solid",
+          "type": "any",
+          "quantity": 1
+        }
+      ],
+      "processingTime": 2.0
+    }
   },
   {
-      "Key": "generator",
-      "Value": {
-          "name": "Generator",
-          "processingTime": 1,
-          "inputs": [],
-          "outputs": [
-              {
-                  "ItemProperties": "Energy",
-                  "type": "electricity",
-                  "quantity": 5
-              }
-          ]
-      }
+    "Key": "generator",
+    "Value": {
+      "name": "Generator",
+      "inputs": [],
+      "outputs": [
+        {
+          "ItemProperties": "Energy",
+          "type": "electricity",
+          "quantity": 1
+        }
+      ],
+      "processingTime": 1.0
+    }
   },
   {
-      "Key": "miner",
-      "Value": {
-          "name": "Miner",
-          "processingTime": 5,
-          "inputs": [],
-          "outputs": [
-              {
-                  "ItemProperties": "RawMaterial, Solid, Ore",
-                  "type": "ore",
-                  "quantity": 1
-              }
-          ]
-      }
+    "Key": "miner",
+    "Value": {
+      "name": "Miner",
+      "inputs": [
+        {
+          "ItemProperties": "Energy",
+          "type": "electricity",
+          "quantity": 5
+        }
+      ],
+      "outputs": [
+        {
+          "ItemProperties": "RawMaterial, Solid, Ore",
+          "type": "ore",
+          "quantity": 1
+        }
+      ],
+      "processingTime": 5.0
+    }
   },
   {
-      "Key": "conduit",
-      "Value": {
-          "name": "Conduit",
-          "processingTime": 0.1,
-          "inputs": [
-              {
-                  "ItemProperties": "Energy",
-                  "type": "electricity",
-                  "quantity": 1
-              }
-          ],
-          "outputs": [
-              {
-                  "ItemProperties": "Energy",
-                  "type": "electricity",
-                  "quantity": 1
-              }
-          ]
-      }
+    "Key": "conduit",
+    "Value": {
+      "name": "Conduit",
+      "inputs": [
+        {
+          "ItemProperties": "Energy",
+          "type": "electricity",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "ItemProperties": "Energy",
+          "type": "electricity",
+          "quantity": 1
+        }
+      ],
+      "processingTime": 0.1
+    }
   }
 ]

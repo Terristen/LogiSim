@@ -6,6 +6,10 @@ using UnityEngine;
 using Unity.Entities.UniversalDelegates;
 using Unity.VisualScripting;
 using UnityEditor.MemoryProfiler;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine.UIElements;
+using UnityEditor.MPE;
+using System.Linq;
 
 
 namespace LogiSim
@@ -24,84 +28,167 @@ namespace LogiSim
         protected override void OnCreate()
         {
             commandBufferSystem = World.GetOrCreateSystemManaged<EndSimulationEntityCommandBufferSystem>();
+            
         }
+
+        /// <changeplan>
+        /// resolve the transfer of packets using the new port system and remove the item-level matching logic. only match against the port type. 
+        /// also use the new PortID to match connections.
+        /// </changeplan>
         protected override void OnUpdate()
         {
             // Create a parallel writer for the command buffer
             var commandBuffer = commandBufferSystem.CreateCommandBuffer().AsParallelWriter();
 
             // Get the buffer lookups for the Connection, Storage, and Transfer components
-            var connectionBufferLookup = GetBufferLookup<ConnectionBufferElement>(false);
-            var storageBufferLookup = GetBufferLookup<StorageBufferElement>(false);
+            
+            //var storageBufferLookup = GetBufferLookup<StorageBufferElement>(false);
             var transferBufferLookup = GetBufferLookup<TransferBufferElement>(false);
             var storageCapacityBufferLookup = GetBufferLookup<StorageCapacity>(false);
-            var recipeInputElementBufferLookup = GetBufferLookup<RecipeInputElement>(true);
+            //var recipeOutputElementBufferLookup = GetBufferLookup<RecipeOutputElement>(true);
+            var machinePortBufferLookup = GetBufferLookup<MachinePort>(true); // New lookup for MachinePort buffer
+
 
             Entities
                 .WithNone<IsTransporter>()
-                .WithNativeDisableParallelForRestriction(connectionBufferLookup)
-                .WithNativeDisableParallelForRestriction(storageBufferLookup)
+                //.WithNativeDisableParallelForRestriction(storageBufferLookup)
                 .WithNativeDisableParallelForRestriction(transferBufferLookup)
                 .WithNativeDisableParallelForRestriction(storageCapacityBufferLookup)
-                .WithNativeDisableParallelForRestriction(recipeInputElementBufferLookup)
+                //.WithNativeDisableParallelForRestriction(recipeOutputElementBufferLookup)
+                .WithNativeDisableParallelForRestriction(machinePortBufferLookup) // Add restriction for MachinePort buffer
                 .ForEach((Entity entity, int entityInQueryIndex, ref Machine machine) =>
                 {
-                    var connections = connectionBufferLookup[entity];
-                    var storageBuffer = storageBufferLookup[entity];
+
+
+                    //var storageBuffer = storageBufferLookup[entity];
                     var transferBuffer = transferBufferLookup[entity];
-                    
+                    var machinePortBuffer = machinePortBufferLookup[entity]; // Get the MachinePort buffer
+                    //var recipeOutputBuffer = recipeOutputElementBufferLookup[entity];
+
 
                     HelperFunctions helperFunctions = new HelperFunctions();
 
-                    // Iterate over all connections of the current machine
-                    for (int i = 0; i < connections.Length; i++)
+
+
+                    for(int p=0; p<machinePortBuffer.Length; p++) //for each port
                     {
-                        var cbe = connections[i];
-                        Connection connection = connections[i].connection;
+                        var port = machinePortBuffer[p];
 
-                        if (cbe.RefractoryTimer >= machine.OutputRefractory)
+                        if (port.PortDirection == Direction.In) //ignore in-ports
                         {
-                            //Debug.Log($"Refractory Timer Past Due: {cbe.RefractoryTimer}");
-                            // Get the StorageCapacity buffer of the target entity
-                            var targetStorageCapacityBuffer = storageCapacityBufferLookup[connection.ConnectedEntity];
-                            var recipeData = recipeInputElementBufferLookup[connection.ConnectedEntity];
+                            continue;
+                        }
+
+                        if(port.RefractoryTimer < port.RefractoryTime) //ignore ports that are not ready to send
+                        {
+                            continue;
+                        }
+                        
+                        if(port.ConnectedEntity == Entity.Null) //ignore ports that are not connected
+                        {
+                            continue;
+                        }
+                        
+                        if (port.ToPortID != 0) //ignore ports that are not connected to a port
+                        {
+                            continue;
+                        }
+
+                        if (port.AssignedPacketType == -1) //ignore ports that are not assigned a packet type
+                        {
+                            continue;
+                        }
+                        
+                        var selfStorageCapacityBuffer = storageCapacityBufferLookup[entity];
+                        var targetStorageCapacityBuffer = storageCapacityBufferLookup[port.ConnectedEntity];
+                        Packet recipePacket = new Packet { Type = port.AssignedPacketType, Quantity = port.RecipeQuantity, ItemProperties = port.PortProperty, ElapsedTime = 0 };
 
 
-                            // Iterate over all packets in the machine's storage
-                            for (int j = 0; j < storageBuffer.Length; j++)
-                            {
-                                Packet packet = storageBuffer[j].Packet;
-                                
-                                // Create a new packet to transfer
-                                Packet transferPacket = new Packet { Type = packet.Type, Quantity = 1, ItemProperties = packet.ItemProperties, ElapsedTime = 0 };
+                        var storageInfo = helperFunctions.GetCapacityData(recipePacket, selfStorageCapacityBuffer);
+                        var capacityData = helperFunctions.GetCapacityData(recipePacket, targetStorageCapacityBuffer);
+                        if(helperFunctions.GetCapacityAvailable(recipePacket, targetStorageCapacityBuffer) >= recipePacket.Quantity && storageInfo.CurrentQuantity >= recipePacket.Quantity)
+                        {
+                            // Create a new packet to transfer
+                            Packet transferPacket = new Packet { Type = recipePacket.Type, Quantity = recipePacket.Quantity, ItemProperties = recipePacket.ItemProperties, ElapsedTime = 0 };
+                            Packet removePacket = new Packet { Type = recipePacket.Type, Quantity = -recipePacket.Quantity, ItemProperties = recipePacket.ItemProperties, ElapsedTime = 0 };
 
-                                bool isImportable = helperFunctions.IsImportable(transferPacket, recipeData, targetStorageCapacityBuffer);
-                                //Debug.Log($"Connection to {connection.ConnectedEntity.Index} IsImportable:{isImportable}");
-
-                                // Check if the packet quantity is greater than 0
-                                if (packet.Quantity > 0 && isImportable)
-                                {
-
-                                    // Create a new packet to transfer
-                                    //Packet transferPacket = new Packet { Type = packet.Type, Quantity = 1, ItemProperties = packet.ItemProperties, ElapsedTime = 0 };
-
-                                    // Add the transfer packet to the connected entity's buffer
-                                    commandBuffer.AppendToBuffer<TransferBufferElement>(entityInQueryIndex, connection.ConnectedEntity, new TransferBufferElement { Packet = transferPacket });
-
-                                    // Decrease the quantity of the packet in the machine's storage
-                                    packet.Quantity--;
-                                    storageBuffer[j] = new StorageBufferElement { Packet = packet };
-
-                                    //Debug.Log($"transferred {transferPacket.Quantity} {transferPacket.Type}. Resetting Refractory from {cbe.RefractoryTimer} to 0");
-                                    connections[i] = new ConnectionBufferElement { connection = connection, RefractoryTimer = 0 };
-                                    
-                                    break;
-                                }
-                            }
-
+                            // Add the transfer packet to the connected entity's buffer
+                            commandBuffer.AppendToBuffer<TransferBufferElement>(entityInQueryIndex, port.ConnectedEntity, new TransferBufferElement { Packet = transferPacket });
+                            commandBuffer.AppendToBuffer<TransferBufferElement>(entityInQueryIndex, entity, new TransferBufferElement { Packet = removePacket });
                             
+                            // Reset the connection's refractory timer
+                            port.RefractoryTimer = 0;
+                            machinePortBuffer[p] = port;
                         }
                     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    //// Iterate over the connections
+                    //for (int i = 0; i < connectionBuffer.Length; i++)
+                    //{
+                    //    var connection = connectionBuffer[i].connection;
+                    //    var port = helperFunctions.GetLocalPort(machinePortBuffer, connection);
+
+                    //    if (connection.ConnectionDirection == Direction.Out && connectionBuffer[i].RefractoryTimer >= port.RefractoryTime) // only sending packets out and that the port is ready to send an item as tracked by the connection's refractory timer
+                    //    {
+
+                    //        //if the connection is Out then we need to find the target machine's port
+                    //        var targetPortBuffer = machinePortBufferLookup[connection.ConnectedEntity]; // Get the target port buffer
+                    //        var targetStorageCapacityBuffer = storageCapacityBufferLookup[connection.ConnectedEntity];
+                    //        var targetPortCapacities = storageCapacityBufferLookup[connection.ConnectedEntity];
+
+                    //        Packet recipePacket = new Packet { ItemProperties = connection.ItemProperties, Type = connection.Type};
+
+                    //        var capacityData = helperFunctions.GetCapacityData(new Packet { ItemProperties = connection.ItemProperties }, targetStorageCapacityBuffer);
+                    //        float capacityLeft = (capacityData.Capacity == 0)? 0 : capacityData.Capacity - capacityData.CurrentQuantity;
+                            
+                    //        if (helperFunctions.HasPort(connection.ConnectedEntity, connection.ToPortID, targetPortBuffer))
+                    //        {
+                    //            var recipe = helperFunctions.GetPortRecipe(recipeOutputBuffer, connection.ItemProperties);
+                               
+                    //            for(int j = 0; j < storageBuffer.Length; j++)
+                    //            {
+                    //                Packet packet = storageBuffer[j].Packet;
+                    //                if (helperFunctions.MatchesRequirement(packet, recipePacket))
+                    //                {
+                    //                    if (packet.Quantity >= recipePacket.Quantity && capacityLeft >= recipePacket.Quantity)
+                    //                    {
+                    //                        // Create a new packet to transfer
+                    //                        Packet transferPacket = new Packet { Type = recipePacket.Type, Quantity = recipePacket.Quantity, ItemProperties = recipePacket.ItemProperties, ElapsedTime = 0 };
+
+                    //                        // Add the transfer packet to the connected entity's buffer
+                    //                        commandBuffer.AppendToBuffer<TransferBufferElement>(entityInQueryIndex, connection.ConnectedEntity, new TransferBufferElement { Packet = transferPacket });
+
+                    //                        // Decrease the quantity of the packet in the machine's storage
+                    //                        packet.Quantity -= recipePacket.Quantity;
+                    //                        storageBuffer[j] = new StorageBufferElement { Packet = packet };
+
+                    //                        // Reset the connection's refractory timer
+                    //                        connectionBuffer[i] = new ConnectionBufferElement { connection = connection, RefractoryTimer = 0 };
+                                            
+                    //                        break;
+                    //                    }
+                    //                }
+                    //            }   
+                    //        }
+                    //    }
+                    //}
+
+                    
                 }).ScheduleParallel();
             
             commandBufferSystem.AddJobHandleForProducer(Dependency);
@@ -162,6 +249,10 @@ namespace LogiSim
     /// </summary>
     public partial class AggregateStorageSystem : SystemBase
     {
+        /// <changeplan>
+        /// modify the system to create new storageCapacityBuffer if the item type and properties are not in the buffer
+        /// </changeplan>
+        /// <complete />
         protected override void OnUpdate()
         {
 
@@ -190,6 +281,8 @@ namespace LogiSim
                         storageCapacityBuffer[i] = storageCapacity;
                     }
 
+
+
                     // Create a NativeHashMap to hold the total quantity of each item type
                     NativeHashMap<PacketKey, float> itemTotals = new NativeHashMap<PacketKey, float>(storageBuffer.Length, Allocator.Temp);
 
@@ -197,7 +290,7 @@ namespace LogiSim
                     for (int j = 0; j < storageBuffer.Length; j++)
                     {
                         Packet packet = storageBuffer[j].Packet;
-
+                        bool found = false;
                         // Iterate over all storage bins in the StorageCapacity buffer
                         for (int k = 0; k < storageCapacityBuffer.Length; k++)
                         {
@@ -209,9 +302,25 @@ namespace LogiSim
                                 // Increase the current items in the storage bin
                                 scb.CurrentQuantity += packet.Quantity;
                                 storageCapacityBuffer[k] = scb;
+                                found = true;
                                 break;
                             }
                         }
+
+                        //we're allowing new item types to be added to the storage capacity buffer so we need to calculate totals for those.
+                        //if(!found)
+                        //{
+                        //    // Create a new storage capacity buffer element
+                        //    var newStorageCapacity = new StorageCapacity
+                        //    {
+                        //        BinType = packet.ItemProperties,
+                        //        Capacity = packet.Quantity,
+                        //        CurrentQuantity = packet.Quantity
+                        //    };
+
+                        //    // Add the new storage capacity buffer element to the buffer
+                        //    storageCapacityBuffer.Add(newStorageCapacity);
+                        //}
                     }
 
                     // Iterate over all packets in the machine's storage
@@ -279,6 +388,36 @@ namespace LogiSim
                     var storageCapacity = storageCapacityBuffer[0];
                     storageCapacity.CurrentQuantity = 0;
 
+                    // Transporters have to do this before they can aggregate their storage because they keep packets separate and you can't add a buffer item while iterating over it.
+                    //for(int i = 0; i < storageBuffer.Length; i++)
+                    //{
+                    //    bool found = false;
+                    //    for (int j = 0; j < storageCapacityBuffer.Length; j++)
+                    //    {
+                    //        var scb = storageCapacityBuffer[j];
+                    //        if (helperFunctions.IsCompatiblePort(storageBuffer[i].Packet, scb))
+                    //        {
+                    //            found = true;
+                    //            break;
+                    //        }
+                    //    }
+                    //    //we're allowing new item types to be added to the storage capacity buffer so we need to calculate totals for those.
+                    //    if (!found)
+                    //    {
+                    //        // Create a new storage capacity buffer element
+                    //        var newStorageCapacity = new StorageCapacity
+                    //        {
+                    //            BinType = storageBuffer[i].Packet.ItemProperties,
+                    //            Capacity = storageBuffer[i].Packet.Quantity,
+                    //            CurrentQuantity = storageBuffer[i].Packet.Quantity
+                    //        };
+
+                    //        // Add the new storage capacity buffer element to the buffer
+                    //        storageCapacityBuffer.Add(newStorageCapacity);
+                    //    }
+                    //}
+
+
                     // Iterate over all packets in the machine's storage
                     for (int j = 0; j < storageBuffer.Length; j++)
                     {
@@ -340,20 +479,21 @@ namespace LogiSim
             var storageCapacityBufferLookup = GetBufferLookup<StorageCapacity>(false);
             var storageBufferLookup = GetBufferLookup<StorageBufferElement>(false);
             //var transferBufferLookup = GetBufferLookup<TransferBufferElement>(false);
-            var connectionBufferLookup = GetBufferLookup<ConnectionBufferElement>(true);
+            //var connectionBufferLookup = GetBufferLookup<ConnectionBufferElement>(true);
+            var machinePortBufferLookup = GetBufferLookup<MachinePort>(true); // New lookup for MachinePort buffer
 
             Entities
                 .WithAll<IsTransporter>()
                 .WithNativeDisableParallelForRestriction(storageCapacityBufferLookup)
                 .WithNativeDisableParallelForRestriction(storageBufferLookup)
-                //.WithNativeDisableParallelForRestriction(transferBufferLookup)
-                .WithNativeDisableParallelForRestriction(connectionBufferLookup)
+                .WithNativeDisableParallelForRestriction(machinePortBufferLookup)
+                //.WithNativeDisableParallelForRestriction(connectionBufferLookup)
                 .ForEach((Entity entity, int entityInQueryIndex, ref Machine machine, ref RecipeData recipeData, ref IsTransporter transporter) =>
                 {
                     if (!machine.Disabled)
                     {
                         var storageBuffer = storageBufferLookup[entity];
-                        var connectionBuffer = connectionBufferLookup[entity];
+                        var machinePortBuffer = machinePortBufferLookup[entity];
 
                         var helperFunctions = new HelperFunctions();
 
@@ -370,27 +510,43 @@ namespace LogiSim
                             // Check if the packet's ElapsedTime is greater than or equal to the total transfer time
                             if (packet.ElapsedTime >= totalTransferTime)
                             {
-                                // Iterate over all output connections
-                                for (int j = 0; j < connectionBuffer.Length; j++)
+
+                                for(int p=0; p < machinePortBuffer.Length; p++)
                                 {
-                                    Connection connection = connectionBuffer[j].connection;
-                                    var targetStorageCapacityBuffer = storageCapacityBufferLookup[connection.ConnectedEntity];
-
-                                    if(helperFunctions.GetCapacityAvailable(packet,targetStorageCapacityBuffer) > 0)
+                                    var port = machinePortBuffer[p];
+                                    var targetStorageCapacityBuffer = storageCapacityBufferLookup[port.ConnectedEntity];
+                                    if (port.PortDirection == Direction.Out && port.AssignedPacketType == packet.Type && helperFunctions.GetCapacityAvailable(packet, targetStorageCapacityBuffer) > packet.Quantity)
                                     {
-                                        packet.ElapsedTime = 0;
-                                        // Send the packet to the compatible output's target
                                         var transferPacket = new TransferBufferElement { Packet = new Packet { ElapsedTime = 0, ItemProperties = packet.ItemProperties, Quantity = packet.Quantity, Type = packet.Type } };
-                                        commandBuffer.AppendToBuffer<TransferBufferElement>(entityInQueryIndex, connection.ConnectedEntity, transferPacket);
-
+                                        commandBuffer.AppendToBuffer<TransferBufferElement>(entityInQueryIndex, port.ConnectedEntity, transferPacket);
                                         packet.Quantity = 0;
-                                        
                                         storageBuffer[i] = new StorageBufferElement { Packet = packet };
-                                        
                                         break;
                                     }
-
                                 }
+
+
+                                //// Iterate over all output connections
+                                //for (int j = 0; j < connectionBuffer.Length; j++)
+                                //{
+                                //    Connection connection = connectionBuffer[j].connection;
+                                //    var targetStorageCapacityBuffer = storageCapacityBufferLookup[connection.ConnectedEntity];
+
+                                //    if(helperFunctions.GetCapacityAvailable(packet,targetStorageCapacityBuffer) > 0)
+                                //    {
+                                //        packet.ElapsedTime = 0;
+                                //        // Send the packet to the compatible output's target
+                                //        var transferPacket = new TransferBufferElement { Packet = new Packet { ElapsedTime = 0, ItemProperties = packet.ItemProperties, Quantity = packet.Quantity, Type = packet.Type } };
+                                //        commandBuffer.AppendToBuffer<TransferBufferElement>(entityInQueryIndex, connection.ConnectedEntity, transferPacket);
+
+                                //        packet.Quantity = 0;
+                                        
+                                //        storageBuffer[i] = new StorageBufferElement { Packet = packet };
+                                        
+                                //        break;
+                                //    }
+
+                                //}
                             }
                             else
                             {
@@ -508,23 +664,37 @@ namespace LogiSim
                 .WithNativeDisableParallelForRestriction(storageBufferLookup)
                 .WithNone<ProcessingFinished>().ForEach((Entity entity, int entityInQueryIndex, ref Machine machine) =>
                 {
+                    bool debug = false;
+                    //just testing the one machine
+                    if(entity.Index == 50)
+                    {
+                        debug = false;
+                    }
+
                     var inputs = recipeInputLookup[entity];
                     var storageBuffer = storageBufferLookup[entity];
+                    
+                    if(debug){ Debug.Log($"InputElements: {inputs.Length} - {!machine.Processing} && {!machine.Disabled}"); }
 
                     if (!machine.Processing && !machine.Disabled)
                     {
                         NativeHashMap<int, float> foundPackets = new NativeHashMap<int, float>(inputs.Length, Allocator.Temp);
                         var helperFunctions = new HelperFunctions();
 
+                        if (debug) { Debug.Log($"Entity {entity.Index} has {storageBuffer.Length} StorageBuffers and {inputs.Length} Inputs"); }
                         // Check if the machine has the required input items
                         bool hasRequiredItems = true;
                         foreach (RecipeInputElement requiredPacket in inputs)
                         {
+                            if (debug) { Debug.Log($"Checking {requiredPacket.Packet.Quantity} {requiredPacket.Packet.Type}"); }
+
                             bool found = false;
                             for (int i = 0; i < storageBuffer.Length; i++)
                             {
+                                //Debug.Log($"Checking {requiredPacket.Packet.Quantity} {requiredPacket.Packet.Type} against {storageBuffer[i].Packet.Quantity} {storageBuffer[i].Packet.Type} = {helperFunctions.MatchesRequirement(storageBuffer[i].Packet, requiredPacket.Packet)}");
                                 Packet req = requiredPacket.Packet;
                                 Packet sto = storageBuffer[i].Packet;
+                                if (debug) { Debug.Log($"Checking {req.Quantity} {req.Type} against {sto.Quantity} {sto.Type} = {helperFunctions.MatchesRequirement(sto, req)}"); }
                                 if (helperFunctions.MatchesRequirement(sto, req))
                                 {
                                     found = true;
@@ -539,10 +709,13 @@ namespace LogiSim
                                 break;
                             }
                         }
+                        
+                        if (debug) { Debug.Log($"Has Required Items: {hasRequiredItems}"); }
 
                         // If the machine has the required input items, subtract the required quantities and set Processing to true
                         if (hasRequiredItems)
                         {
+                            if(debug) { Debug.Log($"Action Loop for Starting Processing"); }
                             NativeHashMap<int, float>.Enumerator foundPacketsEnumerator = foundPackets.GetEnumerator();
 
                             while (foundPacketsEnumerator.MoveNext())
@@ -555,7 +728,7 @@ namespace LogiSim
                                 packetInStorage.Quantity -= quantityToSubtract;
                                 storageBuffer[index] = new StorageBufferElement { Packet = packetInStorage };
                             }
-
+                            if (debug) { Debug.Log($"Processing Initiated."); }
                             machine.Processing = true;
                         }
 
@@ -576,21 +749,21 @@ namespace LogiSim
         protected override void OnUpdate()
         {
             
-            var connectionBufferLookup = GetBufferLookup<ConnectionBufferElement>(false);
+            var machinePortBufferLookup = GetBufferLookup<MachinePort>(false);
 
             Entities
-                .WithNativeDisableParallelForRestriction(connectionBufferLookup)
+                .WithNativeDisableParallelForRestriction(machinePortBufferLookup)
                 .ForEach((Entity entity, int entityInQueryIndex, ref Machine machine) =>
                 {
-                    var connectionBuffer = connectionBufferLookup[entity];
+                    var portBuffer = machinePortBufferLookup[entity];
 
-                    if (connectionBuffer.Length > 0)
+                    if (portBuffer.Length > 0)
                     {
-                        for (int i = 0; i < connectionBuffer.Length; i++)
+                        for (int i = 0; i < portBuffer.Length; i++)
                         {
-                            var connection = connectionBuffer[i];
+                            var connection = portBuffer[i];
                             connection.RefractoryTimer += SystemAPI.Time.DeltaTime;
-                            connectionBuffer[i] = connection;
+                            portBuffer[i] = connection;
                         }
                     }
                 }).ScheduleParallel();
@@ -643,14 +816,15 @@ namespace LogiSim
 
                     // Check if the machine has enough power
                     bool hasEnoughPower = false;
-                    if (machine.Processing && !machine.Disabled)
+                    if(machine.PowerType == ItemProperty.None)
                     {
                         hasEnoughPower = true;
-                    }
-                    else
+                    } else if (!machine.Disabled) //machine.Processing && //removed processing check because we want to check for power even if the machine is not processing
                     {
                         for (int i = 0; i < storageCapacityBuffer.Length; i++)
                         {
+                            //if(entity.Index == 52) Debug.Log($"Checking {storageCapacityBuffer[i].BinType} against {machine.PowerType} = {helperFunctions.MatchesRequirement(storageCapacityBuffer[i].BinType, machine.PowerType)} && {storageCapacityBuffer[i].CurrentQuantity} >= {powerRequired}");
+                            
                             if (helperFunctions.MatchesRequirement(storageCapacityBuffer[i].BinType, machine.PowerType) && storageCapacityBuffer[i].CurrentQuantity >= powerRequired)
                             {
                                 hasEnoughPower = true;
@@ -658,6 +832,7 @@ namespace LogiSim
                             }
                         }
                     }
+
 
                     // If the machine doesn't have enough power, add the NotPowered tag to it
                     if (!hasEnoughPower)
@@ -781,7 +956,8 @@ namespace LogiSim
             var storageBufferLookup = GetBufferLookup<StorageBufferElement>(true);
             var recipeInputBufferLookup = GetBufferLookup<RecipeInputElement>(true);
             var recipeOutputBufferLookup = GetBufferLookup<RecipeOutputElement>(true);
-            var connectionBufferLookup = GetBufferLookup<ConnectionBufferElement>(true);
+            //var connectionBufferLookup = GetBufferLookup<ConnectionBufferElement>(true);
+            var machinePortBufferLookup = GetBufferLookup<MachinePort>(true); // New lookup for MachinePort buffer
 
             var commandBuffer = commandBufferSystem.CreateCommandBuffer().AsParallelWriter();
 
@@ -792,14 +968,14 @@ namespace LogiSim
                 .WithNativeDisableParallelForRestriction(storageBufferLookup)
                 .WithNativeDisableParallelForRestriction(recipeInputBufferLookup)
                 .WithNativeDisableParallelForRestriction(recipeOutputBufferLookup)
-                .WithNativeDisableParallelForRestriction(connectionBufferLookup)
+                .WithNativeDisableParallelForRestriction(machinePortBufferLookup)
                 .ForEach((Entity entity, int entityInQueryIndex, ref Machine machine, ref RecipeData recipeData) =>
             {
                 var recipeInputs = recipeInputBufferLookup[entity];
                 var recipeOutputs = recipeOutputBufferLookup[entity];
                 var storageBuffer = storageBufferLookup[entity];
                 var storageCapacityBuffer = storageCapacityLookup[entity];
-                var connectionBuffer = connectionBufferLookup[entity];
+                var machinePortBuffer = machinePortBufferLookup[entity];
 
                 // Remove all status tags
                 if (SystemAPI.HasComponent<Working>(entity)) { commandBuffer.RemoveComponent<Working>(entityInQueryIndex, entity); }
@@ -854,47 +1030,32 @@ namespace LogiSim
 
 
 
-
                 
-
-                // Check if the number of connections is less than the number of recipe outputs
-                if (connectionBuffer.Length < recipeOutputs.Length)
+                for(int p = 0; p < machinePortBuffer.Length; p++)
                 {
-                    commandBuffer.AddComponent<OutputBlocked>(entityInQueryIndex, entity);
-                }
-                else
-                {
-                    // Check if none of the connections are available to export
-                    bool blockedConnection = false;
-                    for (int i = 0; i < connectionBuffer.Length; i++)
+                    var port = machinePortBuffer[p];
+                    bool outputBlocked = false;
+                    if (port.PortDirection == Direction.Out)
                     {
-                        Connection connection = connectionBuffer[i].connection;
-                        
-                        // Get the buffer lookup
-                        var targetCapacityBuffer = storageCapacityLookup[connection.ConnectedEntity];
-
-                        for(int j = 0; j < recipeOutputs.Length; j++)
+                        if (port.AssignedPacketType == -1)
                         {
-                            Packet outputPacket = recipeOutputs[j].Packet;
-
-                            // Check if the output buffer is compatible with the connected entity's storage capacity
-                            if (helperFunctions.GetCapacityAvailable(outputPacket, targetCapacityBuffer) <= 0)
+                            outputBlocked = true;
+                        } else
+                        {
+                            var targetCapacityBuffer = storageCapacityLookup[port.ConnectedEntity];
+                            if (helperFunctions.GetCapacityAvailable(new Packet { ItemProperties = port.PortProperty, Quantity= port.RecipeQuantity, Type = port.AssignedPacketType }, targetCapacityBuffer) <= 0)
                             {
-                                blockedConnection = true;
-                                break;
+                                outputBlocked = true;
                             }
                         }
-
                     }
-
-                    if (blockedConnection)
+                    if(outputBlocked)
                     {
                         commandBuffer.AddComponent<OutputBlocked>(entityInQueryIndex, entity);
+                        break;
                     }
                 }
-
-
-
+                
 
                 
                 // Iterate over all recipe outputs
@@ -971,8 +1132,12 @@ namespace LogiSim
         }
 
 
-        public bool IsCompatiblePort(Packet packet, StorageCapacity storageCapacity)
+        public bool IsCompatiblePort(Packet packet, StorageCapacity storageCapacity, bool debug = false)
         {
+            if (debug)
+            {
+                Debug.Log($"IsCompatiblePort: {storageCapacity.BinType} & {packet.ItemProperties} == {storageCapacity.BinType}");
+            }
             return (storageCapacity.BinType & packet.ItemProperties) == storageCapacity.BinType;
         }
 
@@ -1008,21 +1173,33 @@ namespace LogiSim
             return storageCapacity.CurrentQuantity + packet.Quantity <= storageCapacity.Capacity;
         }
 
-        public bool HasEnoughRoom(Packet packet, DynamicBuffer<StorageCapacity> storageCapacityBuffer)
+        public bool HasEnoughRoom(Packet packet, DynamicBuffer<StorageCapacity> storageCapacityBuffer, bool debug = false)
         {
-            int idx = GetCompatibleOutput(packet, storageCapacityBuffer);
+            int idx = GetCompatibleOutput(packet, storageCapacityBuffer, debug);
+            if(debug)
+            {
+                Debug.Log($"CompatiblePortIndex: {idx}");
+            }
             if (idx == -1)
             {
                 return false;
             }
             var storageCapacity = storageCapacityBuffer[idx];
+            if(debug)
+            {
+                Debug.Log($"HasEnoughRoom: {storageCapacity.CurrentQuantity} + {packet.Quantity} <= {storageCapacity.Capacity}");
+            }
             return storageCapacity.CurrentQuantity + packet.Quantity <= storageCapacity.Capacity;
         }
 
-        public int GetCompatibleOutput(Packet packet, DynamicBuffer<StorageCapacity> storageCapacityBuffer)
+        public int GetCompatibleOutput(Packet packet, DynamicBuffer<StorageCapacity> storageCapacityBuffer, bool debug = false)
         {
             for (int i = 0; i < storageCapacityBuffer.Length; i++)
             {
+                if (debug)
+                {
+                    Debug.Log($"GetCompatibleOutput: {IsCompatiblePort(packet, storageCapacityBuffer[i], debug)} && {HasEnoughRoom(packet, storageCapacityBuffer[i],debug)}");
+                }
                 if (IsCompatiblePort(packet, storageCapacityBuffer[i]) && HasEnoughRoom(packet, storageCapacityBuffer[i]))
                 {
                     return i;
@@ -1074,8 +1251,11 @@ namespace LogiSim
             //Debug.Log($"Cleaning Buffer: {startCount} -> {storageBuffer.Length}");
         }
 
-        public bool MatchesRequirement(Packet packet, Packet requirement)
-        {
+        public bool MatchesRequirement(Packet packet, Packet requirement, bool debug = false)
+        { if (debug)
+            {
+                Debug.Log($"MatchesRequirement: {requirement.Type} == 0 && ({requirement.ItemProperties} & {packet.ItemProperties}) == {requirement.ItemProperties} || {requirement.Type} != 0 && {requirement.Type} == {packet.Type} && {packet.Quantity} >= {requirement.Quantity}");
+            }
             return 
             (
                 (
@@ -1090,6 +1270,90 @@ namespace LogiSim
         public bool MatchesRequirement(ItemProperty itemProperties, ItemProperty requirement)
         {
             return (requirement & itemProperties) == requirement;
+        }
+
+        public bool HasPort(Entity target, SimpleGuid toPortID, DynamicBuffer<MachinePort> targetPortBuffer)
+        {
+            bool found = false;
+            for (int t = 0; t < targetPortBuffer.Length; t++)
+            {
+                if (targetPortBuffer[t].PortID.Equals(toPortID))
+                {
+                    return true;
+                }
+            }
+            return found;
+        }
+
+        //public MachinePort GetTargetPort(DynamicBuffer<MachinePort> machinePortBuffer, SimpleGuid toPortID)
+        //{
+        //    MachinePort targetPort = default;
+
+        //    for (int t = 0; t < machinePortBuffer.Length; t++)
+        //    {
+        //        if (machinePortBuffer[t].PortID.Equals(toPortID))
+        //        {
+        //            targetPort = machinePortBuffer[t];
+        //            return targetPort;
+        //        }
+        //    }
+
+        //    return new MachinePort { StorageCapacity = -1 };
+        //}
+
+        public RecipeOutputElement GetPortRecipe(DynamicBuffer<RecipeOutputElement> recipeBuffer, MachinePort fromPort)
+        {
+            foreach (var recipe in recipeBuffer)
+            {
+                if (MatchesRequirement(recipe.Packet.ItemProperties,fromPort.PortProperty))
+                {
+                    return recipe;
+                }
+            }
+
+            return default;
+        }
+
+        public RecipeOutputElement GetPortRecipe(DynamicBuffer<RecipeOutputElement> recipeBuffer, ItemProperty requirement)
+        {
+            foreach (var recipe in recipeBuffer)
+            {
+                if (MatchesRequirement(recipe.Packet.ItemProperties, requirement))
+                {
+                    return recipe;
+                }
+            }
+
+            return default;
+        }
+
+        //public MachinePort GetLocalPort(DynamicBuffer<MachinePort> portsBuffer, Connection connection)
+        //{
+        //    foreach (var port in portsBuffer)
+        //    {
+        //        if (port.PortID.Equals(connection.FromPortID))
+        //        {
+        //            return port;
+        //        }
+        //    }
+
+        //    return default;
+        //}
+
+
+
+        public bool AreEqualPorts(MachinePort port1, MachinePort port2)
+        {
+            return port1.PortProperty == port2.PortProperty &&
+                   port1.PortID.Equals(port2.PortID) &&
+                   port1.PortDirection == port2.PortDirection;
+        }
+
+        public bool AreCompatiblePorts(MachinePort port1, MachinePort port2)
+        {
+            return port1.PortProperty == port2.PortProperty && //same configuration
+                   !port1.PortID.Equals(port2.PortID) && //prevent self-analysis
+                   port1.PortDirection != port2.PortDirection; //prevent same-direction connections
         }
     }
 }

@@ -2,6 +2,7 @@ using LogiSim;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -23,8 +24,8 @@ namespace LogiSim
         public float Quality;
         public List<MachinePortConfig> ValidInputs;
         public List<MachinePortConfig> ValidOutputs;
+        public List<MachineCapacity> Capacities;
         public bool IsTransporter;
-        public float OutputRefractoryTime;
         public ItemProperty PowerType; //the type of power the machine uses; should match an input port type
         public float PowerConsumption; //units per second
         public float PowerStorage; //units
@@ -33,9 +34,16 @@ namespace LogiSim
     [System.Serializable]
     public struct MachinePortConfig
     {
-        public Guid PortID;
+        public int PortID;
         public ItemProperty PortProperty;
-        public int StorageCapacity;
+        public float RefractoryTime;
+    }
+
+    [System.Serializable]
+    public struct MachineCapacity
+    {
+        public ItemProperty CapacityType;
+        public float Capacity;
     }
 }
 //Todo: add information for the I/O positions on the machine

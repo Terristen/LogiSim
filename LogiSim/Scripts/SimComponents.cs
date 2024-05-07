@@ -76,7 +76,7 @@ namespace LogiSim
         public float Efficiency;
         public int Level;
         public float Quality;
-        public float OutputRefractory; //time in seconds before the machine can output again
+        //public float OutputRefractory; //time in seconds before the machine can output again
         public ItemProperty PowerType;
         public float PowerConsumption;
         public float PowerStorage;
@@ -101,19 +101,24 @@ namespace LogiSim
     public struct MachinePort : IBufferElementData
     {
         public ItemProperty PortProperty;
-        public float StorageCapacity;
-        public SimpleGuid PortID;
+        public int PortID;
         public Direction PortDirection;
+        public int AssignedPacketType;
+        public float RecipeQuantity;
+        public float RefractoryTime;
+        public Entity ConnectedEntity;
+        public int ToPortID;
+        public float RefractoryTimer;
     }
 
     /// <summary>
     /// A buffer that holds the connections of a machine to other machines
     /// </summary>
-    public struct ConnectionBufferElement : IBufferElementData
-    {
-        public Connection connection;
-        public float RefractoryTimer; //time since last transfer
-    }
+    //public struct ConnectionBufferElement : IBufferElementData
+    //{
+    //    public Connection connection;
+    //    public float RefractoryTimer; //time since last transfer
+    //}
 
     /// <summary>
     /// A tag component that indicates that the processing of a machine has finished.
@@ -132,15 +137,15 @@ namespace LogiSim
     /// A struct that holds the information about a connection to another machine. 
     /// It's important to note that machines do not track incoming connections, so the direction may be subject to depreciation.
     /// </summary>
-    public struct Connection : IBufferElementData
-    {
-        public ItemProperty ItemProperties;
-        public int Type;
-        public Entity ConnectedEntity;
-        public Direction ConnectionDirection;
-        public SimpleGuid FromPortID;
-        public SimpleGuid ToPortID;
-    }
+    //public struct Connection : IBufferElementData
+    //{
+    //    public ItemProperty ItemProperties;
+    //    public int Type;
+    //    public Entity ConnectedEntity;
+    //    public Direction ConnectionDirection;
+    //    public SimpleGuid FromPortID;
+    //    public SimpleGuid ToPortID;
+    //}
 
     public struct Working : IComponentData
     {
