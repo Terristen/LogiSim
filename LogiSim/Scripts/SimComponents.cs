@@ -69,7 +69,6 @@ namespace LogiSim
     public struct Machine : IComponentData
     {
         public float ProcessTimer;
-        public float WorkTimer;
         public bool Processing;
         public bool Disabled;
         public MachineClass MachineClass;
@@ -153,6 +152,10 @@ namespace LogiSim
     }
 
     public struct InputStarved : IComponentData
+    {
+    }
+
+    public struct InputBlocked : IComponentData
     {
     }
 

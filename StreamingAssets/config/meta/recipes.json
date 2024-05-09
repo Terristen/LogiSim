@@ -29,7 +29,7 @@
         {
           "ItemProperties": "Energy",
           "type": "electricity",
-          "quantity": 1
+          "quantity": 3
         }
       ],
       "processingTime": 1.0

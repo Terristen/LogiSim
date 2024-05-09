@@ -402,7 +402,6 @@ namespace LogiSim
             entityManager.AddComponentData(newMachine.entity, new Machine
             {
                 ProcessTimer = 0f,
-                WorkTimer = 0f,
                 Processing = false,
                 Disabled = false,
                 MachineClass = newMachine.MachineClass,
@@ -482,6 +481,9 @@ namespace LogiSim
 
             }
 
+            entityManager.AddBuffer<RecipeInputElement>(newMachine.entity);
+            entityManager.AddBuffer<RecipeOutputElement>(newMachine.entity);
+
             // Add the Connections component
             //entityManager.AddBuffer<ConnectionBufferElement>(newMachine.entity);
 
@@ -520,7 +522,7 @@ namespace LogiSim
             }
 
             // Check if the RecipeInputElement buffer exists and clear it
-            if (!entityManager.HasComponent<RecipeInputElement>(machineInstanceData.entity))
+            if (entityManager.HasComponent<RecipeInputElement>(machineInstanceData.entity))
             {
                 var recipeInputBuffer = entityManager.GetBuffer<RecipeInputElement>(machineInstanceData.entity);
                 recipeInputBuffer.Clear();
@@ -528,7 +530,7 @@ namespace LogiSim
             }
 
             // Check if the RecipeOutputElement buffer exists and clear it
-            if (!entityManager.HasComponent<RecipeOutputElement>(machineInstanceData.entity))
+            if (entityManager.HasComponent<RecipeOutputElement>(machineInstanceData.entity))
             {
                 var recipeOutputBuffer = entityManager.GetBuffer<RecipeOutputElement>(machineInstanceData.entity);
                 recipeOutputBuffer.Clear();

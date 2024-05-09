@@ -457,6 +457,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SimulationSpeed: 1
+  ReserializeConfigData: 0
 --- !u!4 &1378906054
 Transform:
   m_ObjectHideFlags: 0
