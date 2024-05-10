@@ -12,10 +12,7 @@ namespace LogiSim
     /// </summary>
     public partial class AggregateStorageSystem : SystemBase
     {
-        /// <changeplan>
-        /// modify the system to create new storageCapacityBuffer if the item type and properties are not in the buffer
-        /// </changeplan>
-        /// <complete />
+        
         protected override void OnUpdate()
         {
 
@@ -70,20 +67,6 @@ namespace LogiSim
                             }
                         }
 
-                        //we're allowing new item types to be added to the storage capacity buffer so we need to calculate totals for those.
-                        //if(!found)
-                        //{
-                        //    // Create a new storage capacity buffer element
-                        //    var newStorageCapacity = new StorageCapacity
-                        //    {
-                        //        BinType = packet.ItemProperties,
-                        //        Capacity = packet.Quantity,
-                        //        CurrentQuantity = packet.Quantity
-                        //    };
-
-                        //    // Add the new storage capacity buffer element to the buffer
-                        //    storageCapacityBuffer.Add(newStorageCapacity);
-                        //}
                     }
 
                     // Iterate over all packets in the machine's storage
@@ -151,34 +134,7 @@ namespace LogiSim
                     var storageCapacity = storageCapacityBuffer[0];
                     storageCapacity.CurrentQuantity = 0;
 
-                    // Transporters have to do this before they can aggregate their storage because they keep packets separate and you can't add a buffer item while iterating over it.
-                    //for(int i = 0; i < storageBuffer.Length; i++)
-                    //{
-                    //    bool found = false;
-                    //    for (int j = 0; j < storageCapacityBuffer.Length; j++)
-                    //    {
-                    //        var scb = storageCapacityBuffer[j];
-                    //        if (helperFunctions.IsCompatiblePort(storageBuffer[i].Packet, scb))
-                    //        {
-                    //            found = true;
-                    //            break;
-                    //        }
-                    //    }
-                    //    //we're allowing new item types to be added to the storage capacity buffer so we need to calculate totals for those.
-                    //    if (!found)
-                    //    {
-                    //        // Create a new storage capacity buffer element
-                    //        var newStorageCapacity = new StorageCapacity
-                    //        {
-                    //            BinType = storageBuffer[i].Packet.ItemProperties,
-                    //            Capacity = storageBuffer[i].Packet.Quantity,
-                    //            CurrentQuantity = storageBuffer[i].Packet.Quantity
-                    //        };
-
-                    //        // Add the new storage capacity buffer element to the buffer
-                    //        storageCapacityBuffer.Add(newStorageCapacity);
-                    //    }
-                    //}
+                    
 
 
                     // Iterate over all packets in the machine's storage

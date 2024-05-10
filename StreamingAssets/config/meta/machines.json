@@ -8,18 +8,18 @@
       "Efficiency": 0.5,
       "Level": 1,
       "Quality": 1.0,
-      "ValidInputs": [
+      "Ports": [
         {
           "PortID": 0,
           "PortProperty": "Energy",
-          "RefractoryTime": 0.01
-        }
-      ],
-      "ValidOutputs": [
+          "RefractoryTime": 0.01,
+          "PortDirection": "In"
+        },
         {
           "PortID": 1,
           "PortProperty": "Energy",
-          "RefractoryTime": 0.01
+          "RefractoryTime": 0.01,
+          "PortDirection": "Out"
         }
       ],
       "Capacities": [
@@ -43,18 +43,18 @@
       "Efficiency": 0.5,
       "Level": 1,
       "Quality": 1.0,
-      "ValidInputs": [
+      "Ports": [
         {
           "PortID": 0,
           "PortProperty": "Solid",
-          "RefractoryTime": 0.1
-        }
-      ],
-      "ValidOutputs": [
+          "RefractoryTime": 0.1,
+          "PortDirection": "In"
+        },
         {
           "PortID": 1,
           "PortProperty": "Solid",
-          "RefractoryTime": 0.1
+          "RefractoryTime": 0.1,
+          "PortDirection": "Out"
         }
       ],
       "Capacities": [
@@ -78,18 +78,18 @@
       "Efficiency": 0.5,
       "Level": 1,
       "Quality": 1.0,
-      "ValidInputs": [
+      "Ports": [
         {
           "PortID": 0,
           "PortProperty": "Liquid, Fuel",
-          "RefractoryTime": 0.1
-        }
-      ],
-      "ValidOutputs": [
+          "RefractoryTime": 0.1,
+          "PortDirection": "In"
+        },
         {
           "PortID": 1,
           "PortProperty": "Energy",
-          "RefractoryTime": 0.01
+          "RefractoryTime": 0.01,
+          "PortDirection": "Out"
         }
       ],
       "Capacities": [
@@ -117,18 +117,18 @@
       "Efficiency": 0.5,
       "Level": 1,
       "Quality": 1.0,
-      "ValidInputs": [
+      "Ports": [
         {
           "PortID": 0,
           "PortProperty": "Energy",
-          "RefractoryTime": 0.01
-        }
-      ],
-      "ValidOutputs": [
+          "RefractoryTime": 0.01,
+          "PortDirection": "In"
+        },
         {
           "PortID": 1,
           "PortProperty": "Solid",
-          "RefractoryTime": 1.0
+          "RefractoryTime": 1.0,
+          "PortDirection": "Out"
         }
       ],
       "Capacities": [

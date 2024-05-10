@@ -22,8 +22,7 @@ namespace LogiSim
         public float Efficiency;
         public int Level;
         public float Quality;
-        public List<MachinePortConfig> ValidInputs;
-        public List<MachinePortConfig> ValidOutputs;
+        public List<MachinePortConfig> Ports;
         public List<MachineCapacity> Capacities;
         public bool IsTransporter;
         public ItemProperty PowerType; //the type of power the machine uses; should match an input port type
@@ -37,6 +36,7 @@ namespace LogiSim
         public int PortID;
         public ItemProperty PortProperty;
         public float RefractoryTime;
+        public Direction PortDirection;
     }
 
     [System.Serializable]

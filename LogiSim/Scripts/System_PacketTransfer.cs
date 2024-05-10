@@ -22,10 +22,6 @@ namespace LogiSim
 
         }
 
-        /// <changeplan>
-        /// resolve the transfer of packets using the new port system and remove the item-level matching logic. only match against the port type. 
-        /// also use the new PortID to match connections.
-        /// </changeplan>
         protected override void OnUpdate()
         {
             // Create a parallel writer for the command buffer

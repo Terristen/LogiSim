@@ -19,9 +19,7 @@ namespace LogiSim
         {
             var storageCapacityLookup = GetBufferLookup<StorageCapacity>(true);
             var storageBufferLookup = GetBufferLookup<StorageBufferElement>(false);
-            //var recipeInputBufferLookup = GetBufferLookup<RecipeInputElement>(true);
-            //var recipeOutputBufferLookup = GetBufferLookup<RecipeOutputElement>(true);
-            //var connectionBufferLookup = GetBufferLookup<ConnectionBufferElement>(true);
+            
 
             var commandBuffer = commandBufferSystem.CreateCommandBuffer().AsParallelWriter();
 
@@ -30,17 +28,11 @@ namespace LogiSim
                 .WithNone<IsTransporter, NotPowered, OutputBufferFull>()
                 .WithNativeDisableParallelForRestriction(storageCapacityLookup)
                 .WithNativeDisableParallelForRestriction(storageBufferLookup)
-                //.WithNativeDisableParallelForRestriction(recipeInputBufferLookup)
-                //.WithNativeDisableParallelForRestriction(recipeOutputBufferLookup)
-                //.WithNativeDisableParallelForRestriction(connectionBufferLookup)
                 .ForEach((Entity entity, int entityInQueryIndex, ref Machine machine, ref RecipeData recipeData) =>
                 {
-                    //var recipeInputs = recipeInputBufferLookup[entity];
-                    //var recipeOutputs = recipeOutputBufferLookup[entity];
                     var storageBuffer = storageBufferLookup[entity];
                     var storageCapacityBuffer = storageCapacityLookup[entity];
-                    //var connectionBuffer = connectionBufferLookup[entity];
-
+                    
                     if (!machine.Disabled && machine.Processing)
                     {
                         // Calculate the power required for the next tick

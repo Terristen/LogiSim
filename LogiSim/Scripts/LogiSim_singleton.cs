@@ -364,6 +364,7 @@ namespace LogiSim
             public int Level;
             public float Quality;
             public bool IsTransporter;
+            public float TransporterLength;
             public float OutputRefractoryTime;
             public ItemProperty PowerType;
             public float PowerConsumption;
@@ -449,37 +450,37 @@ namespace LogiSim
             entityManager.AddBuffer<MachinePort>(newMachine.entity);
             DynamicBuffer<MachinePort> portBuffer = entityManager.GetBuffer<MachinePort>(newMachine.entity);
 
-            for (var p = 0; p < machine.ValidInputs.Count; p++)
+            for (var p = 0; p < machine.Ports.Count; p++)
             {
-                var port = machine.ValidInputs[p];
+                var port = machine.Ports[p];
                 
                 portBuffer.Add(new MachinePort
                 {
                     PortProperty = port.PortProperty,
                     PortID = port.PortID,
-                    PortDirection = Direction.In,
+                    PortDirection = port.PortDirection,
                     RefractoryTime = port.RefractoryTime,
                     AssignedPacketType = -1
                 });
 
-                machine.ValidInputs[p] = port;
+                machine.Ports[p] = port;
             }
 
-            for (var p = 0; p < machine.ValidOutputs.Count; p++)
-            {
-                var port = machine.ValidOutputs[p];
-                portBuffer.Add(new MachinePort
-                {
-                    PortProperty = port.PortProperty,
-                    PortID = port.PortID,
-                    PortDirection = Direction.Out,
-                    RefractoryTime = port.RefractoryTime,
-                    AssignedPacketType = -1
-                });
+            //for (var p = 0; p < machine.ValidOutputs.Count; p++)
+            //{
+            //    var port = machine.ValidOutputs[p];
+            //    portBuffer.Add(new MachinePort
+            //    {
+            //        PortProperty = port.PortProperty,
+            //        PortID = port.PortID,
+            //        PortDirection = Direction.Out,
+            //        RefractoryTime = port.RefractoryTime,
+            //        AssignedPacketType = -1
+            //    });
 
-                machine.ValidOutputs[p] = port;
+            //    machine.ValidOutputs[p] = port;
 
-            }
+            //}
 
             entityManager.AddBuffer<RecipeInputElement>(newMachine.entity);
             entityManager.AddBuffer<RecipeOutputElement>(newMachine.entity);
@@ -518,6 +519,17 @@ namespace LogiSim
                 entityManager.SetComponentData(machineInstanceData.entity, new RecipeData
                 {
                     ProcessingTime = recipe.processingTime
+                });
+            }
+
+            //if the machine is a transporter, set the length
+            if(machineInstanceData.IsTransporter)
+            {
+                entityManager.SetComponentData(machineInstanceData.entity, new IsTransporter
+                {
+                    Length = (machineInstanceData.TransporterLength == 0) ? 1 : machineInstanceData.TransporterLength
+
+                    //TODO: modify the capacity of the capacity buffer to reflect the base capacity * length
                 });
             }
 
@@ -599,257 +611,7 @@ namespace LogiSim
             machineInstanceData.CurrentRecipe = recipe;
         }
 
-        /// <summary>
-        /// Create a Machine entity with the specified Machine and Recipe assets.
-        /// </summary>
-        /// <param name="machine"></param>
-        /// <param name="recipe"></param>
-        /// <returns>Entity reference for new Entity</returns>
-        //public Entity CreateMachine(SimpleMachine machine, SimpleRecipe recipe)
-        //{
-        //    MachineInstanceData newMachine = new MachineInstanceData();
-
-        //    bool isValid = IsRecipeCompatibleWithMachine(recipe, machine);
-        //    if (!isValid)
-        //    {
-        //        Debug.LogError($"Invalid recipe({recipe.name}) for this machine({machine.name}).");
-        //        return Entity.Null;
-        //    }
-            
-
-        //    // Create the entity
-        //    Entity machineEntity = entityManager.CreateEntity();
-        //    LogiSim.Instance.RegisterEntity(machineEntity);
-
-        //    // Add the Machine component
-        //    entityManager.AddComponentData(machineEntity, new Machine
-        //    {
-        //        ProcessTimer = 0f,
-        //        WorkTimer = 0f,
-        //        Processing = false,
-        //        Disabled = false,
-        //        MachineClass = machine.MachineClass,
-        //        Efficiency = machine.Efficiency,
-        //        Level = machine.Level,
-        //        Quality = machine.Quality,
-        //        OutputRefractory = machine.OutputRefractoryTime,
-        //        PowerType = machine.PowerType,
-        //        PowerConsumption = machine.PowerConsumption
-        //    });
-
-        //    entityManager.AddComponentData(machineEntity, new RecipeData
-        //    {
-        //        ProcessingTime = recipe.processingTime
-        //        // Add more fields here if needed
-        //    });
-
-        //    if(machine.IsTransporter)
-        //    {
-        //        entityManager.AddComponent<IsTransporter>(machineEntity);
-        //    }
-
-        //    // Add the StorageBuffer and TransferBuffer components
-        //    entityManager.AddBuffer<StorageBufferElement>(machineEntity);
-        //    entityManager.AddBuffer<TransferBufferElement>(machineEntity);
-
-        //    // create and load the storage capacity buffer and port buffer
-        //    entityManager.AddBuffer<StorageCapacity>(machineEntity);
-            
-        //    DynamicBuffer<StorageCapacity> storageBuffer = entityManager.GetBuffer<StorageCapacity>(machineEntity);
-            
-        //    foreach (var port in machine.ValidInputs.Concat(machine.ValidOutputs))
-        //    {
-        //        storageBuffer.Add(new StorageCapacity
-        //        {
-        //            BinType = port.PortProperty,
-        //            Capacity = port.StorageCapacity,
-        //            CurrentQuantity = 0
-        //        });
-        //    }
-
-        //    entityManager.AddBuffer<MachinePort>(machineEntity);
-        //    DynamicBuffer<MachinePort> portBuffer = entityManager.GetBuffer<MachinePort>(machineEntity);
-
-        //    for(var p=0; p < machine.ValidInputs.Count; p++)
-        //    {
-        //        var port = machine.ValidInputs[p];
-        //        var newGuid = SimpleGuid.Create(port.PortID);
-        //        portBuffer.Add(new MachinePort
-        //        {
-        //            PortProperty = port.PortProperty,
-        //            StorageCapacity = port.StorageCapacity,
-        //            PortID = newGuid,
-        //            PortDirection = Direction.In
-        //        });
-
-        //        port.PortID = newGuid.ToGuid();
-        //        machine.ValidInputs[p] = port;
-        //    }
-
-        //    for (var p = 0; p < machine.ValidOutputs.Count; p++)
-        //    {
-        //        var port = machine.ValidOutputs[p];
-        //        var newGuid = SimpleGuid.Create(port.PortID);
-        //        portBuffer.Add(new MachinePort
-        //        {
-        //            PortProperty = port.PortProperty,
-        //            StorageCapacity = port.StorageCapacity,
-        //            PortID = newGuid,
-        //            PortDirection = Direction.Out
-        //        });
-
-        //        port.PortID = newGuid.ToGuid();
-        //        machine.ValidOutputs[p] = port;
-        //    }
-
-
-        //    // Add the Connections component
-        //    entityManager.AddBuffer<ConnectionBufferElement>(machineEntity);
-
-        //    // Add the RecipeInput and RecipeOutput components
-        //    DynamicBuffer<RecipeInputElement> inputBuffer = entityManager.AddBuffer<RecipeInputElement>(machineEntity);
-        //    foreach (var input in recipe.inputs)
-        //    {
-        //        var inputdata = GetItemData(input.type);
-        //        // Set the ItemProperties field
-        //        ItemProperty properties;
-        //        if (inputdata.code == 0)
-        //        {
-        //            if (input.ItemProperties == ItemProperty.None)
-        //            {
-        //                // Scenario: input.type is PacketType.Any and input.ItemProperties is ItemProperty.None
-        //                properties = GetPropertiesForPacketType(input.type);
-        //            }
-        //            else
-        //            {
-        //                // Scenario: input.type is PacketType.Any and input.ItemProperties is not ItemProperty.None
-        //                properties = input.ItemProperties;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            if (input.ItemProperties == ItemProperty.None)
-        //            {
-        //                // Scenario: input.type is not PacketType.Any and input.ItemProperties is ItemProperty.None
-        //                properties = GetPropertiesForPacketType(input.type);
-        //            }
-        //            else
-        //            {
-        //                // Scenario: input.type is not PacketType.Any and input.ItemProperties is not ItemProperty.None
-        //                properties = GetPropertiesForPacketType(input.type) | input.ItemProperties;
-        //            }
-        //        }
-
-        //        inputBuffer.Add(new RecipeInputElement { Packet = new Packet { Type = inputdata.code, Quantity = input.quantity, ItemProperties = properties } });
-        //    }
-
-
-        //    DynamicBuffer<RecipeOutputElement> outputBuffer = entityManager.AddBuffer<RecipeOutputElement>(machineEntity);
-        //    foreach (var output in recipe.outputs)
-        //    {
-        //        var outputdata = GetItemData(output.type);
-        //        outputBuffer.Add(new RecipeOutputElement { Packet = new Packet { Type = outputdata.code, Quantity = output.quantity, ItemProperties = GetPropertiesForPacketType(output.type) } });
-        //    }
-
-        //    return machineEntity;
-        //}
-
         
-
-        /// <summary>
-        /// Connect two machines together with a specified Packet.
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="target"></param>
-        /// <param name="packet"></param>
-        /// 
-        //public void ConnectMachines(Entity source, Entity target, Packet packet)
-        //{
-        //    // Get the RecipeOutput component of the source machine
-        //    DynamicBuffer<RecipeOutputElement> sourceOutputs = entityManager.GetBuffer<RecipeOutputElement>(source);
-
-        //    // Check if the source machine can output the specified packet
-        //    bool sourceCanOutput = false;
-        //    foreach (var output in sourceOutputs)
-        //    {
-        //        if (output.Packet.Type == packet.Type || output.Packet.Type == 0)
-        //        {
-        //            if (packet.Type == 0)
-        //            {
-        //                if ((output.Packet.ItemProperties & packet.ItemProperties) == packet.ItemProperties)
-        //                {
-        //                    sourceCanOutput = true;
-        //                    break;
-        //                }
-        //            }
-        //            else
-        //            {
-        //                sourceCanOutput = true;
-        //                break;
-        //            }
-        //        }
-        //    }
-
-        //    if (!sourceCanOutput)
-        //    {
-        //        Debug.LogError("Source machine cannot output the specified packet type");
-        //        return;
-        //    }
-
-        //    // Get the RecipeInput component of the target machine
-        //    DynamicBuffer<RecipeInputElement> targetInputs = entityManager.GetBuffer<RecipeInputElement>(target);
-
-        //    // Check if the target machine can input the specified packet
-        //    bool targetCanInput = false;
-        //    foreach (var input in targetInputs)
-        //    {
-        //        //Debug.Log($"");
-        //        if (input.Packet.Type == packet.Type || input.Packet.Type == 0)
-        //        {
-        //            Debug.Log($"Type == type or 0");
-        //            if (packet.Type == 0)
-        //            {
-        //                Debug.Log($"Type == 0");
-        //                if ((input.Packet.ItemProperties & packet.ItemProperties) == packet.ItemProperties)
-        //                {
-        //                    Debug.Log($"Item properties pass");
-        //                    targetCanInput = true;
-        //                    break;
-        //                }
-        //            }
-        //            else
-        //            {
-        //                Debug.Log($"{input.Packet.ItemProperties} & {packet.ItemProperties} == {input.Packet.ItemProperties & packet.ItemProperties}");
-        //                targetCanInput = true;
-        //                break;
-        //            }
-        //        }
-        //    }
-
-        //    if (!targetCanInput)
-        //    {
-        //        Debug.LogError($"Target machine (Entity ID: {target.Index}) cannot input the specified packet type: {packet.Type}");
-        //        return;
-        //    }
-
-        //    // Get the Connections component of the source machine
-        //    DynamicBuffer<ConnectionBufferElement> sourceConnections = entityManager.GetBuffer<ConnectionBufferElement>(source);
-
-        //    // Add a connection to the target machine
-        //    sourceConnections.Add(new ConnectionBufferElement { connection = new Connection { Type = packet.Type, ConnectedEntity = target, ItemProperties = packet.ItemProperties } });
-        //}
-
-
-
-        //public void ConnectMachines(Entity source, Entity target, IOData outputDefinition)
-        //{
-        //    var outputdata = GetItemData(outputDefinition.type);
-        //    // Create a Packet from the output definition
-        //    Packet packet = new Packet { Type = outputdata.code, ItemProperties = outputDefinition.ItemProperties };
-
-        //    // Call the original ConnectMachines method with the created Packet
-        //    ConnectMachines(source, target, packet);
-        //}
 
         public bool AreEqualPorts(MachinePort port1, MachinePort port2)
         {
@@ -934,121 +696,6 @@ namespace LogiSim
         }
 
 
-        /// <summary>
-        /// OLD PORT BASED CONNECTION
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="target"></param>
-        /// <param name="sourcePort"></param>
-        /// <param name="targetPort"></param>
-        //public void ConnectMachines(Entity source, Entity target, SimpleGuid sourcePort, SimpleGuid targetPort)
-        //{
-        //    var src_machine = entityManager.GetComponentData<Machine>(source);
-        //    var tgt_machine = entityManager.GetComponentData<Machine>(target);
-
-        //    var srcPorts = entityManager.GetBuffer<MachinePort>(source);
-        //    var tgtPorts = entityManager.GetBuffer<MachinePort>(target);
-
-        //    DynamicBuffer<ConnectionBufferElement> sourceConnections = entityManager.GetBuffer<ConnectionBufferElement>(source);
-        //    MachinePort port_from = default;
-        //    MachinePort port_to = default;
-        //    bool sourcePortFound = false;
-        //    bool targetPortFound = false;
-
-        //    foreach (MachinePort outPort in srcPorts)
-        //    {
-        //        if (outPort.PortID.Equals(sourcePort))
-        //        {
-        //            port_from = outPort;
-        //            sourcePortFound = true;
-        //            break;
-        //        }
-        //    }
-
-        //    foreach (MachinePort inPort in tgtPorts)
-        //    {
-        //        if (inPort.PortID.Equals(targetPort))
-        //        {
-        //            port_to = inPort;
-        //            targetPortFound = true;
-        //            break;
-        //        }
-        //    }
-
-        //    if (!sourcePortFound || !targetPortFound)
-        //    {
-        //        Debug.LogError("Source or target port not found");
-        //        return;
-        //    }
-
-        //    if (port_from.PortDirection == port_to.PortDirection )
-        //    {
-        //        Debug.LogError("You must connect ports of opposite directions. Out -> In");
-        //        return;
-        //    }
-
-        //    if ((port_from.PortProperty & port_to.PortProperty) == port_to.PortProperty)
-        //    {
-        //        sourceConnections.Add(new ConnectionBufferElement { connection = new Connection { Type = 0, ConnectedEntity = target, ItemProperties = port_from.PortProperty, FromPortID = sourcePort, ToPortID = targetPort, ConnectionDirection = Direction.Out } });
-        //    }
-            
-        //}
-
-
-
-        //public void ConnectMachines(Entity source, Entity target, string type)
-        //{
-        //    ConnectMachines(source, target, ItemDictionary[type].code);
-        //}
-
-        //public void ConnectMachines(Entity source, Entity target, int type)
-        //{
-        //    ItemProperty properties = GetPropertiesForTypeNumber(type);
-
-        //    var targ_machine = entityManager.GetComponentData<Machine>(target);
-        //    //var src_machine = entityManager.GetComponentData<Machine>(source);
-
-        //    //var targInputs = entityManager.GetBuffer<RecipeInputElement>(target);
-        //    var srcOutputs = entityManager.GetBuffer<RecipeOutputElement>(source);
-
-        //    var targCapacity = entityManager.GetBuffer<StorageCapacity>(target);
-        //    var srcCapacity = entityManager.GetBuffer<StorageCapacity>(source);
-        //    bool pass = false;
-        //    ItemProperty outBinProps= 0;
-        //    foreach(var output in srcCapacity)
-        //    {
-        //        if((output.BinType & properties) == properties)
-        //        {
-        //            foreach(var input in targCapacity)
-        //            {
-        //                if((input.BinType & properties) == properties || (targ_machine.PowerType & properties) == properties)
-        //                {
-        //                    outBinProps = output.BinType;
-        //                    pass = true;
-        //                    break;
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    if (pass)
-        //    {
-        //        ItemProperty outProps = 0;
-        //        foreach(var recipeOut in srcOutputs)
-        //        {
-        //            if(recipeOut.Packet.Type == type)
-        //            {
-        //                outProps = recipeOut.Packet.ItemProperties;
-        //            }
-        //        }
-
-        //        // Get the Connections component of the source machine
-        //        DynamicBuffer<ConnectionBufferElement> sourceConnections = entityManager.GetBuffer<ConnectionBufferElement>(source);
-
-        //        // Add a connection to the target machine
-        //        sourceConnections.Add(new ConnectionBufferElement { connection = new Connection { Type = type, ConnectedEntity = target, ItemProperties = outProps } });
-        //    }
-        //}
 
         public ItemDictionaryEntry GetItemDataByCode(int typeNumber)
         {
@@ -1065,51 +712,53 @@ namespace LogiSim
             return itemData.properties;
         }
 
+
+        // Overriding this method since we'll be making recipes use process information instead of port configuration for compatibility
         public bool IsRecipeCompatibleWithMachine(SimpleRecipe recipe, SimpleMachine machine)
         {
-            // Create checklists for input and output ports
-            List<bool> inputChecklist = new List<bool>(new bool[machine.ValidInputs.Count]);
-            List<bool> outputChecklist = new List<bool>(new bool[machine.ValidOutputs.Count]);
+            //// Create checklists for input and output ports
+            //List<bool> inputChecklist = new List<bool>(new bool[machine.Ports.Count]);
+            //List<bool> outputChecklist = new List<bool>(new bool[machine.Ports.Count]);
 
-            // Loop through recipe inputs and claim machine input ports
-            foreach (var input in recipe.inputs)
-            {
-                ItemProperty inputProperties = GetPropertiesForPacketType(input.type);
-                bool inputClaimed = false;
-                for (int i = 0; i < machine.ValidInputs.Count; i++)
-                {
-                    if (!inputChecklist[i] && (machine.ValidInputs[i].PortProperty & inputProperties) == machine.ValidInputs[i].PortProperty)
-                    {
-                        inputChecklist[i] = true;
-                        inputClaimed = true;
-                        break;
-                    }
-                }
-                if (!inputClaimed)
-                {
-                    return false;
-                }
-            }
+            //// Loop through recipe inputs and claim machine input ports
+            //foreach (var input in recipe.inputs)
+            //{
+            //    ItemProperty inputProperties = (input.type == "any")? input.ItemProperties : GetPropertiesForPacketType(input.type);
+            //    bool inputClaimed = false;
+            //    for (int i = 0; i < machine.Ports.Count; i++)
+            //    {
+            //        if (!inputChecklist[i] && machine.Ports[i].PortDirection == Direction.In && (machine.Ports[i].PortProperty & inputProperties) == machine.Ports[i].PortProperty)
+            //        {
+            //            inputChecklist[i] = true;
+            //            inputClaimed = true;
+            //            break;
+            //        }
+            //    }
+            //    if (!inputClaimed)
+            //    {
+            //        return false;
+            //    }
+            //}
 
-            // Loop through recipe outputs and claim machine output ports
-            foreach (var output in recipe.outputs)
-            {
-                ItemProperty outputProperties = GetPropertiesForPacketType(output.type);
-                bool outputClaimed = false;
-                for (int i = 0; i < machine.ValidOutputs.Count; i++)
-                {
-                    if (!outputChecklist[i] && (machine.ValidOutputs[i].PortProperty & outputProperties) == machine.ValidOutputs[i].PortProperty)
-                    {
-                        outputChecklist[i] = true;
-                        outputClaimed = true;
-                        break;
-                    }
-                }
-                if (!outputClaimed)
-                {
-                    return false;
-                }
-            }
+            //// Loop through recipe outputs and claim machine output ports
+            //foreach (var output in recipe.outputs)
+            //{
+            //    ItemProperty outputProperties = (output.type == "any") ? output.ItemProperties : GetPropertiesForPacketType(output.type);
+            //    bool outputClaimed = false;
+            //    for (int i = 0; i < machine.Ports.Count; i++)
+            //    {
+            //        if (!outputChecklist[i] && machine.Ports[i].PortDirection == Direction.Out && (machine.Ports[i].PortProperty & outputProperties) == machine.Ports[i].PortProperty)
+            //        {
+            //            outputChecklist[i] = true;
+            //            outputClaimed = true;
+            //            break;
+            //        }
+            //    }
+            //    if (!outputClaimed)
+            //    {
+            //        return false;
+            //    }
+            //}
 
 
             return true;

@@ -27,7 +27,7 @@
       "inputs": [],
       "outputs": [
         {
-          "ItemProperties": "Energy",
+          "ItemProperties": "None",
           "type": "electricity",
           "quantity": 3
         }
@@ -62,14 +62,14 @@
       "name": "Conduit",
       "inputs": [
         {
-          "ItemProperties": "Energy",
+          "ItemProperties": "None",
           "type": "electricity",
           "quantity": 1
         }
       ],
       "outputs": [
         {
-          "ItemProperties": "Energy",
+          "ItemProperties": "None",
           "type": "electricity",
           "quantity": 1
         }

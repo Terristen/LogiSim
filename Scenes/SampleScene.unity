@@ -456,7 +456,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f93d4cbfe4f8304e8ed1adb0107ab09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SimulationSpeed: 1
+  SimulationSpeed: 0.1
   ReserializeConfigData: 0
 --- !u!4 &1378906054
 Transform:

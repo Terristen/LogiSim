@@ -60,7 +60,7 @@ namespace LogiSim
 
     public struct IsTransporter : IComponentData
     {
-        public int Length; //meters - Items travel at a speed of recipe speed m/s
+        public float Length; //meters - Items travel at a speed of recipe speed m/s
     }
 
     /// <summary>
@@ -75,7 +75,6 @@ namespace LogiSim
         public float Efficiency;
         public int Level;
         public float Quality;
-        //public float OutputRefractory; //time in seconds before the machine can output again
         public ItemProperty PowerType;
         public float PowerConsumption;
         public float PowerStorage;
@@ -110,14 +109,7 @@ namespace LogiSim
         public float RefractoryTimer;
     }
 
-    /// <summary>
-    /// A buffer that holds the connections of a machine to other machines
-    /// </summary>
-    //public struct ConnectionBufferElement : IBufferElementData
-    //{
-    //    public Connection connection;
-    //    public float RefractoryTimer; //time since last transfer
-    //}
+
 
     /// <summary>
     /// A tag component that indicates that the processing of a machine has finished.
@@ -132,19 +124,7 @@ namespace LogiSim
     [Serializable]
     public enum Direction { In, Out }
 
-    /// <summary>
-    /// A struct that holds the information about a connection to another machine. 
-    /// It's important to note that machines do not track incoming connections, so the direction may be subject to depreciation.
-    /// </summary>
-    //public struct Connection : IBufferElementData
-    //{
-    //    public ItemProperty ItemProperties;
-    //    public int Type;
-    //    public Entity ConnectedEntity;
-    //    public Direction ConnectionDirection;
-    //    public SimpleGuid FromPortID;
-    //    public SimpleGuid ToPortID;
-    //}
+
 
     public struct Working : IComponentData
     {

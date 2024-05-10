@@ -15,6 +15,7 @@ namespace LogiSim
             var machinePortBufferLookup = GetBufferLookup<MachinePort>(false);
 
             Entities
+                //.WithNone<IsTransporter>()
                 .WithNativeDisableParallelForRestriction(machinePortBufferLookup)
                 .ForEach((Entity entity, int entityInQueryIndex, ref Machine machine) =>
                 {
