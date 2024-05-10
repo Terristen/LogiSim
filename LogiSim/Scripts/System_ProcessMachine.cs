@@ -83,78 +83,73 @@ namespace LogiSim
 
                     var packet = storageBuffer[0].Packet;
                     bool preventAdvancement = false;
-                    if (packet.ElapsedTime + SystemAPI.Time.DeltaTime >= totalTransferTime)
+                    if (packet.ElapsedTime + deltaTime >= totalTransferTime)
                     {
                         float availableCapacity = 0;
                         MachinePort matchingPort = new MachinePort { PortID = -1 };
                         for (int p = 0; p < machinePortBuffer.Length; p++)
                         {
                             var port = machinePortBuffer[p];
-
-                            if (port.PortDirection != Direction.Out)
+                            if (port.PortDirection != Direction.Out || !helperFunctions.MatchesRequirement(packet.ItemProperties, port.PortProperty) || port.RefractoryTimer < port.RefractoryTime)
                             {
                                 continue;
                             }
-
-                            if (!helperFunctions.MatchesRequirement(packet.ItemProperties, port.PortProperty))
-                            {
-                                continue;
-                            }
-
-                            if (port.RefractoryTimer < port.RefractoryTime)
-                            {
-                                continue;
-                            }
-
-                            var tgtCap = storageCapacityBufferLookup[matchingPort.ConnectedEntity];
+                    
+                            var tgtCap = storageCapacityBufferLookup[port.ConnectedEntity];
                             availableCapacity = helperFunctions.GetCapacityAvailable(packet, tgtCap);
-                            if (availableCapacity <= 0)
-                            {
-                                continue;
-                            }
+                            if (availableCapacity <= 0) continue;
+                    
                             matchingPort = port;
+                            break;
                         }
-
+                    
                         if (matchingPort.PortID != -1) // found a matching port
                         {
                             preventAdvancement = false;
-
+                    
                             // Transfer the packet
                             float transferableQuantity = Mathf.Min(packet.Quantity, availableCapacity);
                             float leftoverQuantity = packet.Quantity - transferableQuantity;
-
+                    
                             var transferPacket = new TransferBufferElement { Packet = new Packet { ElapsedTime = 0, ItemProperties = packet.ItemProperties, Quantity = transferableQuantity, Type = packet.Type } };
                             commandBuffer.AppendToBuffer<TransferBufferElement>(entityInQueryIndex, matchingPort.ConnectedEntity, transferPacket);
-
-                            if(storageBuffer.Length > 1)
+                    
+                            if (leftoverQuantity > 0)
                             {
-                                var nxtPacket = storageBuffer[1].Packet;
-                                nxtPacket.Quantity += leftoverQuantity;
-                                storageBuffer[1] = new StorageBufferElement { Packet = nxtPacket };
-                            } else
-                            {
-                                packet.Quantity = leftoverQuantity;
-                                packet.ElapsedTime += SystemAPI.Time.DeltaTime; //extra time to make sure it's the next one taken
-                                storageBuffer[0] = new StorageBufferElement { Packet = packet };
+                                if (storageBuffer.Length > 1)
+                                {
+                                    var nxtPacket = storageBuffer[1].Packet;
+                                    nxtPacket.Quantity += leftoverQuantity;
+                                    storageBuffer[1] = new StorageBufferElement { Packet = nxtPacket };
+                                }
+                                else
+                                {
+                                    packet.Quantity = leftoverQuantity;
+                                    packet.ElapsedTime = 0; // Reset elapsed time
+                                    storageBuffer[0] = new StorageBufferElement { Packet = packet };
+                                }
                             }
+                            //else
+                            //{
+                            //    storageBuffer.RemoveAt(0);
+                            //}
                         }
-                        else //no matching port found for this packet
+                        else // no matching port found for this packet
                         {
                             preventAdvancement = true;
                         }
-
                     }
-
-                    if(!preventAdvancement)
+                    
+                    if (!preventAdvancement)
                     {
-                        for (int i = 1; i < storageBuffer.Length; i++)
+                        for (int i = 0; i < storageBuffer.Length; i++)
                         {
                             var pckt = storageBuffer[i].Packet;
-                            packet.ElapsedTime = Math.Min(packet.ElapsedTime + SystemAPI.Time.DeltaTime, totalTransferTime);
+                            pckt.ElapsedTime = Math.Min(pckt.ElapsedTime + deltaTime, totalTransferTime);
                             storageBuffer[i] = new StorageBufferElement { Packet = pckt };
                         }
                     }
-
+                    
                     helperFunctions.CleanBuffer(storageBuffer);
 
                 }).ScheduleParallel();
