@@ -5,7 +5,7 @@
       "name": "Conduit_1",
       "prefabRef": "prefab_ConduitBasic",
       "MachineClass": "Logistics",
-      "Efficiency": 0.5,
+      "Efficiency": 1,
       "Level": 1,
       "Quality": 1.0,
       "Ports": [
@@ -18,7 +18,7 @@
         {
           "PortID": 1,
           "PortProperty": "Energy",
-          "RefractoryTime": 0.01,
+          "RefractoryTime": 3,
           "PortDirection": "Out"
         }
       ],
@@ -88,7 +88,7 @@
         {
           "PortID": 1,
           "PortProperty": "Energy",
-          "RefractoryTime": 0.01,
+          "RefractoryTime": 1,
           "PortDirection": "Out"
         }
       ],

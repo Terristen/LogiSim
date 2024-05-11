@@ -57,36 +57,31 @@ namespace LogiSim
                 .WithNativeDisableParallelForRestriction(machinePortBufferLookup)
                 .ForEach((Entity entity, int entityInQueryIndex, ref Machine machine, ref RecipeData recipeData, ref IsTransporter transporter) =>
                 {
-
-                    ///this system needs debugging. it's not working right yet.
-
-                    if (machine.Disabled)
-                    {
-                        return;
-                    }
+                    if (machine.Disabled) return;
 
                     var storageBuffer = storageBufferLookup[entity];
                     var machinePortBuffer = machinePortBufferLookup[entity];
                     var helperFunctions = new HelperFunctions();
 
-                    if (storageBuffer.Length == 0)
-                    {
-                        return;
-                    }
+                    if (storageBuffer.Length == 0) return;
 
-                    // Sorts oldest to the front
+                    // Sort packets by elapsed time, oldest to the front
                     helperFunctions.SortPacketsByElapsedTimeDesc(ref storageBuffer);
 
                     // Calculate the total transfer time for the packet along the transporter
                     float totalTransferTime = recipeData.ProcessingTime * transporter.Length;
 
-
                     var packet = storageBuffer[0].Packet;
                     bool preventAdvancement = false;
+
+                    // DEBUG LOG
+                    Debug.Log($"Processing packet: Type={packet.Type}, Quantity={packet.Quantity}, ElapsedTime={packet.ElapsedTime}");
+
                     if (packet.ElapsedTime + deltaTime >= totalTransferTime)
                     {
                         float availableCapacity = 0;
                         MachinePort matchingPort = new MachinePort { PortID = -1 };
+                        int matchingPortIndex = -1;
                         for (int p = 0; p < machinePortBuffer.Length; p++)
                         {
                             var port = machinePortBuffer[p];
@@ -94,32 +89,42 @@ namespace LogiSim
                             {
                                 continue;
                             }
-                    
+
                             var tgtCap = storageCapacityBufferLookup[port.ConnectedEntity];
                             availableCapacity = helperFunctions.GetCapacityAvailable(packet, tgtCap);
                             if (availableCapacity <= 0) continue;
-                    
+
+                            matchingPortIndex = p;
                             matchingPort = port;
                             break;
                         }
-                    
+
+                        Debug.Log($"Matching port: {matchingPortIndex} : refractory is ready? {matchingPort.RefractoryTimer >= matchingPort.RefractoryTime}");
+
                         if (matchingPort.PortID != -1) // found a matching port
                         {
                             preventAdvancement = false;
-                    
+
                             // Transfer the packet
                             float transferableQuantity = Mathf.Min(packet.Quantity, availableCapacity);
                             float leftoverQuantity = packet.Quantity - transferableQuantity;
-                    
+
+                            // DEBUG LOG
+                            Debug.Log($"Transfer: Type={packet.Type}, TransferQuantity={transferableQuantity}, LeftoverQuantity={leftoverQuantity}");
+
                             var transferPacket = new TransferBufferElement { Packet = new Packet { ElapsedTime = 0, ItemProperties = packet.ItemProperties, Quantity = transferableQuantity, Type = packet.Type } };
                             commandBuffer.AppendToBuffer<TransferBufferElement>(entityInQueryIndex, matchingPort.ConnectedEntity, transferPacket);
-                    
+
+                            matchingPort.RefractoryTimer = 0;
+                            machinePortBuffer[matchingPortIndex] = matchingPort;
+
+
                             if (leftoverQuantity > 0)
                             {
                                 if (storageBuffer.Length > 1)
                                 {
                                     var nxtPacket = storageBuffer[1].Packet;
-                                    nxtPacket.Quantity += leftoverQuantity;
+                                    nxtPacket.Quantity = leftoverQuantity;
                                     storageBuffer[1] = new StorageBufferElement { Packet = nxtPacket };
                                 }
                                 else
@@ -128,18 +133,18 @@ namespace LogiSim
                                     packet.ElapsedTime = 0; // Reset elapsed time
                                     storageBuffer[0] = new StorageBufferElement { Packet = packet };
                                 }
+                            } else
+                            {
+                                packet.Quantity = 0;
+                                storageBuffer[0] = new StorageBufferElement { Packet = packet };
                             }
-                            //else
-                            //{
-                            //    storageBuffer.RemoveAt(0);
-                            //}
                         }
                         else // no matching port found for this packet
                         {
                             preventAdvancement = true;
                         }
                     }
-                    
+
                     if (!preventAdvancement)
                     {
                         for (int i = 0; i < storageBuffer.Length; i++)
@@ -147,12 +152,17 @@ namespace LogiSim
                             var pckt = storageBuffer[i].Packet;
                             pckt.ElapsedTime = Math.Min(pckt.ElapsedTime + deltaTime, totalTransferTime);
                             storageBuffer[i] = new StorageBufferElement { Packet = pckt };
+
+                            // DEBUG LOG
+                            Debug.Log($"Advancing packet: Type={pckt.Type}, Quantity={pckt.Quantity}, ElapsedTime={pckt.ElapsedTime}");
                         }
                     }
-                    
+
                     helperFunctions.CleanBuffer(storageBuffer);
 
                 }).ScheduleParallel();
+
+
 
             commandBufferSystem.AddJobHandleForProducer(Dependency);
         }

@@ -29,7 +29,7 @@
         {
           "ItemProperties": "None",
           "type": "electricity",
-          "quantity": 3
+          "quantity": 6
         }
       ],
       "processingTime": 1.0
@@ -74,7 +74,7 @@
           "quantity": 1
         }
       ],
-      "processingTime": 0.1
+      "processingTime": 0.5
     }
   }
 ]
